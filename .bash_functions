@@ -1,4 +1,4 @@
-. $HOME/.bash_utility_functions # Import utility functions.
+. $HOME/.bash/.bash_utility_functions # Import utility functions.
 # ↓↓↓ PASTE BIN SPRUNGE
 # what ever is piped to this is posted to the sprunge past-bin site.
 ## used for "post":

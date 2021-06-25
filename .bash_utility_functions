@@ -1,7 +1,7 @@
 # Utility Functions (Could be useful outside of this script.
-. $HOME/.bash_constants # A list of constants tuo have in theenv
-. $HOME/.bash_array_functions # Import the array functions.
-. $HOME/.bash_env_functions # The environment interrogation functions.
+. $HOME/.bash/.bash_constants # A list of constants tuo have in theenv
+. $HOME/.bash/.bash_array_functions # Import the array functions.
+. $HOME/.bash/.bash_env_functions # The environment interrogation functions.
 
 
 debugLog="$HOME/.dbout"

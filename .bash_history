@@ -177235,3 +177235,49 @@ ls .bash_{d..z}*
 ll .bash*
 #1624583912
 ls .bash_{e..z}*
+#1624585479
+vim .bashrc
+#1624593657
+llt
+#1624579022
+ta
+#1624595309
+ls
+#1624595328
+vim .bashrc
+#1624595400
+mv hold/.bash_dynamic_prompt_functions ~/.bash/
+#1624595427
+cd .bash
+#1624595439
+grep '.bash_places .*
+#1624595443
+grep '.bash_places' .*
+#1624595481
+grep ' *\. ' .*
+#1624595493
+grep '^ *\. ' .*
+#1624595548
+vim .bashrc
+#1624595666
+llt
+#1624595696
+grep '^ *. ' .*
+#1624595705
+cd .bash
+#1624595707
+grep '^ *. ' .*
+#1624595738
+grep '^ *\. ' .*
+#1624595771
+grep '~' .*
+#1624595837
+vim .bash_utility_functions 
+#1624595846
+gs
+#1624595849
+ga
+#1624595851
+ga .
+#1624595852
+gs

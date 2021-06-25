@@ -1,0 +1,69 @@
+# ↓↓↓ def generatePrompt()
+generatePrompt() {
+    local _DOCSTRING="Generates a PS1 string dynamically."
+    local _USAGE="Usage: generatePrompt "
+
+    local prompts defaultPrompt
+
+    declare -A prompts
+
+    defaultPrompt='[$(generateExitStatus $?)]$ '
+    
+    prompts=(
+        [default]="$defaultPrompt"
+        [/etc]='${green}SYSTEM CONFIGS ${normal}'"$defaultPrompt"
+        [/mass]='COMPANY FILES '"$defaultPrompt"
+        )
+    
+    for directory in "${!prompts[@]}"
+    do
+        if [[ "$PWD" =~ ^$directory ]]; then
+            echo "${prompts[$directory]}"
+            exit 0
+        fi
+    done
+    # If no match, use the default.
+    echo "${prompts[default]}"
+}
+# ↑↑↑ END generatePrompt
+# ↓↓↓ def isItTimeToThrowAParty()
+isItTimeToThrowAParty() {
+    local _DOCSTRING="Checks to see if we are returning from outside the home directory, and throws the party if so."
+    local _USAGE="Usage: isItTimeToThrowAParty "
+    if [[ -v PRINTWELCOME ]]; then
+        if [[ "$PWD" =~ ^$HOME ]]; then
+            printWelcomeHome
+            unset PRINTWELCOME
+        fi
+    elif [[ ! "$PWD" =~ ^$HOME ]]; then
+        PRINTWELCOME=true
+    fi
+}
+# ↑↑↑ END isItTimeToThrowAParty
+# ↓↓↓ def printWelcomeHome()
+printWelcomeHome() {
+    local _DOCSTRING="Prints the welcome home message."
+    local _USAGE="Usage: printWelcomeHome "
+
+    echo "WELCOME HOME"
+}
+# ↑↑↑ END printWelcomeHome
+# ↓↓↓ def generateExitStatus()
+generateExitStatus() {
+    local _DOCSTRING="Returns a fancy exit status that blinks red on failure."
+    local _USAGE="Usage: generateExitStatus <status>"
+    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+
+    local  status
+    minimumArguments 1 "$@" || exit 3 # Quits the entire script if there are not enough arguments.
+    status=$1
+
+    if [[ "$status" != 0 ]]; then
+        echo "$red$status$normal"
+    else
+        echo "$status"
+    fi
+    return 0
+}
+# ↑↑↑ END generateExitStatus
+

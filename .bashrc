@@ -10,7 +10,7 @@
 # ↓↓↓ UTILITY FUNCTIONS BY SUPERBOOT.
 if [[ ! -v IMPORTED_UTILITIES_SUCCESS ]]; # If we haven't imported it yet, import it, but only once.
 then
-    . $HOME/.bash_utility_functions && IMPORTED_UTILITIES_SUCCESS=true # Load in the utility functions file. Lots of handy stuff here.
+    . $HOME/.bash/.bash_utility_functions && IMPORTED_UTILITIES_SUCCESS=true # Load in the utility functions file. Lots of handy stuff here.
 fi
 # ↑↑↑ END UTILITY FUNCTIONS BY SUPERBOOT.
 # ↓↓↓ COLOR VARIABLES SETUP
@@ -52,7 +52,7 @@ PROMPT_COMMAND='history -a; PS1="$(generatePrompt)"; isItTimeToThrowAParty; prin
 #PS1='|$(echo $?)|$(date +%I:%M:%S)|\u@\h:\w🥛 '
 # Move the prompt to alt-j for access when we want it.
 PS1='[$(generateExitStatus $?)]$ ' # Let's keep things simple here.  If you want the prompt hit alt-h.
-. ~/.bash_dynamic_prompt_functions # Loads the supporting functions for the dynamic prompt.
+. ~/.bash/.bash_dynamic_prompt_functions # Loads the supporting functions for the dynamic prompt.
 # ↑↑↑ END PROMPT (PS1)
 # ↓↓↓1 PROMPT FUNCTION printSuperbootsPS1Prompt()
 printSuperbootsPS1Prompt ()
@@ -78,8 +78,8 @@ bind -r '"\eh"' # clear any binding for Alt-h
 bind -x '"\eh":printSuperbootsPS1Prompt' # Bind Alt-h to print the prompt.
 # ↑↑↑1 END printSuperbootsPS1Prompt
 # ↓↓↓ ALIASES
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
+if [ -f ~/.bash/.bash_aliases ]; then
+    . ~/.bash/.bash_aliases
 fi
 # ↑↑↑ END ALIASES
 # ↓↓↓ COLOR LS
@@ -105,7 +105,7 @@ export RANGER_LOAD_DEFAULT_RC=FALSE
 #MAILPATH=/var/spool/mail/john && export MAILPATH
 # ↑↑↑ END EXPORTED ENVIRONMENT VARIABLES 
 # ↓↓↓ LOAD FUNCTIONS
-. ~/.bash_functions
+. ~/.bash/.bash_functions
 # ↑↑↑ END LOAD FUNCTIONS
 # ↓↓↓ FBTERM CHECK
 [ -n "$FBTERM" ] && export TERM=fbter
@@ -119,7 +119,7 @@ export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:~/bin:~/bin/ssh:~/bin/irc:~/bin/cc:
 # ↑↑↑ END PATH EXPORTS
 # ↓↓↓ BOOKMARKS
 # setup filesystem path bookmarks
-. ~/.bash_places
+. ~/.bash/.bash_places
 # ↑↑↑ END BOOKMARKS
 # ↓↓↓ FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # Dissable ctrl-s's binding to flowcontrol's "stop"
@@ -128,11 +128,11 @@ stty -ixon
 # ↓↓↓ CD AND MARK SYSTEM.
 # Include the 'cd' overriding mark system functions.
 ##  NOTE: this script calls the printSuperbootsPS1Prompt function from above in the PS1 section.
-. $HOME/.bash_mark-system
+. $HOME/.bash/.bash_mark-system
 # ↑↑↑ END CD AND MARK SYSTEM.
 
 # Set alt-v to paste from inside tmux with 'tmux paste-buffer' command.
-# . $HOME/.bash_tmux-paste
+# . $HOME/.bash/.bash_tmux-paste
 
 # The debug logging switch. Used by the db() function found in .bash_utility_functions.
 #  DEBUG='' # set to anything turns it on.
