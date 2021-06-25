@@ -1,0 +1,25 @@
+thisYear=$(date +%Y)
+#For Carrier Corespondance.
+policyFiles='/mass/Clients-Active/lasar/Production/PolicyFiles'
+transactionConfirmations="/mass/Clients-Active/lasar/Production/${thisYear}/carrier-correspondence/transaction-confirmations"
+annualStatements="/mass/Clients-Active/lasar/Production/${thisYear}/carrier-correspondence/annual-statements"
+cc="$HOME/doc/cctemp"
+carrierCalls="/mass/Clients-Active/lasar/Production/$(date +%Y)/carrier-calls/"
+
+#For Credit card importing
+ccmain="/mass/CVACorp/Money/gnucash-credit-cards"
+ccprocessing="/mass/CVACorp/Money/gnucash-credit-cards/processing"
+cccompleted="/mass/CVACorp/Money/gnucash-credit-cards/completed"
+ccarchive="/mass/CVACorp/Money/gnucash-credit-cards/archive"
+ccfamily="/mass/family-docs/gnucash-credit-cards"
+ccqif="/mass/CVACorp/Money/${thisYear}/qif-files"
+ccannual="/mass/CVACorp/Money/gnucash-credit-cards/archive/complete-years/2018/"
+
+#For GnuCash
+cash='/mass/gnucash-data-files/LIVE/CVACorp'
+
+#For Check writing
+cvaChecks="/mass/CVACorp/Money/${thisYear}/checks"
+
+#For Carrier calls:
+cccalls='/mass/Clients-Active/lasar/Production/2018/carrier-calls'

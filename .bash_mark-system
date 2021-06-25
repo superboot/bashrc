@@ -1,0 +1,226 @@
+# An advanced dynamic cd command with supporting live marks like in vim (normal mode 'm' command).
+# This works almost completely. it just double appends when you do a: "cd -". Something to do with the two append lines... haha 03/12/20 02:30:00 
+## TODO
+### 
+## TODONE
+### 1.  Add the ability to do: cd 3  to cd to the stack index 3 with the same checks as with cd'ing to marks. DONE 
+
+# Global variables
+export CD_STACK=()     # Creat the stack array
+export CD_POINTER=1    # The pointer of the current position on the CD_STACK
+export CD_SPACE='    ' # Used in report formatting
+export CD_ARROW='--> ' # Used in report formatting
+export CD_HEADLINES=5  # Used in report formatting
+export CD_TAILLINES=5  # Used in report formatting
+
+declare -A marks
+m ()
+{
+    while true # A loop that shouldn't loop. We should break out of this on the first go through.
+    do
+        # If m is called with no arguments, print the list of marks.
+        if [[ $# -eq 0 ]]; then # if this was called with no arguments.
+            local m_key # makes it local to the function
+            for m_key in "${!marks[@]}"; # For each key in the associative array
+            do
+                echo "$m_key: ${marks[$m_key]}" # print the key: value  pairs.
+            done
+            return 0
+        fi
+
+        # m <./path/to/absolut/or/relative/dir>  <mark-character>
+        if [[ $# == 2 ]] && [[ ${#2} == 1 ]]; then # If there are two arguments and the second one is one character long.
+            # There are two arguments. Therefore they are of the form: m <path to dir to mark> <mark>
+            local checkDIR=$(realpath -s "$1")
+            if [[ -d "$checkDIR" ]] || [[ -L "$checkDIR" ]]; then # If the directory is real or a link
+                local markDIR="$checkDIR"
+                local markName="$2"
+            else
+                echo "Dir $checkDIR is not a real directory or symlink. Mark not set." >&2
+            fi
+            break
+        fi
+
+        # If we are only sent a single-character argument, it is a mark name, and we set it to PWD.
+        if [[ $# -eq 1 ]] && [[ ${#1} -eq 1 ]]; then 
+            local markDIR="$PWD"
+            local markName="$1"
+            break
+        fi
+        break # A emergency break. We shouldn't be going through this loop again.
+    done
+    # Store the key: value pair.
+    marks[$markName]="$markDIR" # Store it in the array.
+    # Possible add this to some kind of file or cross session something or other. It's late. I'm done for now. 03/12/20 00:11:44 
+}
+
+thereIsAMarkNamed()
+{
+    # This function takes a single argument and checks if it is the name of a mark.
+    local markmatch 
+    for markmatch in "${!marks[@]}"
+    do
+        if [[ "$markmatch" == "$1" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+
+cd ()
+{
+    # This function works with the m() function that creates marks, and extends the cd command to be able to cd to the marks.
+    if [[ $# -eq 0 ]]; then # we got no arguments, just cd.
+        local targetDIR="$HOME"
+        local doNotPassGo=true
+    fi
+
+    while [[ $# -gt 0 ]] && [[ "$doNotPassGo" != "true" ]]; # while we have arguments, and we are not supposed to skip this loop.
+    do
+        case "$1" in 
+            # The first ones here are the builtin options to bash's builtin 'cd' command.
+            -L) normalCDArgs="${normalCDArgs} $1"
+                ;;
+            -P) normalCDArgs="${normalCDArgs} $1"
+                ;;
+            -e) normalCDArgs="${normalCDArgs} $1"
+                ;;
+            -@) normalCDArgs="${normalCDArgs} $1"
+                ;;
+            # Now we check for the single letter mark.
+            [a-zA-Z])  if [[ -d ./$1 ]]; then # check if there is a directory named the same as the mark.
+                           local targetDIR="./$1" # There is a dir named the same as our mark. cd to that instead of the bookmarked mark.
+                           break
+                       fi
+                       if [[ -v targetDIR ]]; then # Check if we've already set a target dir (specifying a mark after a non option argument (dir))
+                           : # The target dir is already set.
+                           echo "Mark option specified after non-option argument. Ignoring mark option." >&2
+                       fi
+                       if thereIsAMarkNamed "$1"; then # Check if there is a mark by the name $1
+                           targetDIR="${marks[${1}]}" # If so, set it's bookmark as the target.
+                           break # And break out of the case.
+                       else  # The named mark is not a real mark.
+                           #echo "Mark \"${1}\" not set." >&2 # Supply an error message.
+                           echo "\"${1}\": No such directory or mark." >&2 # Supply an error message.
+                           return 1 # This is like exit 1, but we arn't in script, we are a function in the interactive environment.
+                       fi
+                ;;
+            -)     local targetDIR="${OLDPWD:-$HOME}" 
+                   #builtin cd - && cdStackAppend "$PWD" # if we have a cd -  just go home. If you want to use stupid options, tough. 
+                ;;
+            [0-9]) local targetDIR="${CD_STACK["$1"]}" # If it's a single digit, go to that index on the stack.
+                ;;
+            [0-9][0-9]) local targetDIR="${CD_STACK["$1"]}" # If it's a double digit, go to that index on the stack.
+                ;;
+            [0-9][0-9][0-9]) local targetDIR="${CD_STACK["$1"]}" # If it's a tripple digit, go to that index on the stack.
+                ;;
+            [^-]*) local targetDIR="$1" # If it's just a path, go there.
+                ;;
+        esac
+        shift
+    done
+    builtin cd $normalCDArgs "$targetDIR" && cdStackAppend "$PWD" # AND append the new PWD to the stack.
+}
+
+cdStackClearAfterPointer ()
+{
+    while [[ ${#CD_STACK[*]} -gt $((CD_POINTER + 1)) ]]; # While there are elements ahead of the pointer.
+    do
+        unset CD_STACK[-1] # delete the last element
+    done
+}
+
+cdStackAppend ()
+{
+    # Appends the given direcotry to the stack
+    ##   For now, this is all it does. But this is where to implement some disk caching scheme.
+    ##   
+    ##   Just like GIMP, once you change, you can't redo.  Maybe we can get insane and do a vim gundo tree thing. 
+    cdStackClearAfterPointer  # clear the stack forward.
+    CD_STACK[${#CD_STACK[*]}]="$*"
+    local sizeOfStack="${#CD_STACK[*]}"
+    CD_POINTER="$((sizeOfStack - 1))"
+}
+
+
+
+cdStackBackward ()
+{
+    # Moves one back in the cd stack.
+    if [[ "$CD_POINTER" -gt 0 ]]; then  # Make sure we are not at the beginning, or we'll fall off.
+        # Check to see if there is a stack position behind.
+        if [[ -v CD_STACK[$((CD_POINTER - 1))] ]]; then
+            CD_POINTER=$((CD_POINTER - 1)) # move the pointer back in the stack
+            # Note we are directly calling the builtin 'cd' so we don't change the stack by moving.
+            builtin cd "${CD_STACK[CD_POINTER]}" # cd to the new location 
+            if declare -pf printSuperbootsPS1Prompt &>/dev/null; then # If the fancy prompt has been defined.
+                printSuperbootsPS1Prompt
+            else
+                echo "$CD_ARROW$CD_POINTER: $PWD" # print where we are since PS1 promt isn't updated by the "background" cd command.
+            fi
+        fi
+    else
+        : # do nothing, because the pointer is at zero, and there is nowhere else to go.
+    fi
+}
+
+
+cdStackForward ()
+{
+    # Moves one forward in the cd stack, if there is one.
+    local sizeOfStack="${#CD_STACK[*]}"
+    if [[ "$CD_POINTER" -lt $((sizeOfStack - 1 ))  ]]; then # Make sure we are not at the end of the list or we'll fall off.
+        # Check to see if there is a stack position ahead.
+        if [[ -v CD_STACK[$((CD_POINTER + 1))] ]]; then
+            CD_POINTER=$((CD_POINTER + 1)) # move the pointer forward in the stack
+            builtin cd "${CD_STACK[CD_POINTER]}" # cd to the new location # Note we are directly calling the builtin 'cd' so we don't change the stack by moving.
+            if declare -pf printSuperbootsPS1Prompt &>/dev/null; then # If the fancy prompt has been defined.
+                printSuperbootsPS1Prompt
+            else
+                echo "$CD_ARROW$CD_POINTER: $PWD" # print where we are since PS1 promt isn't updated by the "background" cd command.
+            fi
+        fi
+    else
+        : # Do nothing because we are at the most recent entry and there is nowhere else to go.
+    fi
+}
+
+cdStackPrintStack ()
+{
+    # Prints the current stack.
+    :
+    local frame='#------------#'
+    local stack_key # makes it local to the function
+    echo "$frame"
+    for stack_key in "${!CD_STACK[@]}"; # For each key in the associative array
+    do
+        if [[ $stack_key -lt $((CD_POINTER - CD_HEADLINES)) ]]; then # If the index is too far back in the array to be shown.
+            : # do nothing.
+        else
+            if [[ $stack_key -eq $CD_POINTER ]]; then # if the index is the one we are at
+                echo "${CD_ARROW}${stack_key}: ${CD_STACK[$stack_key]}" # print the key: value pair with the arrow pointer.
+            else
+                if [[ $stack_key -gt $((CD_POINTER + CD_TAILLINES)) ]]; then # If the index is too far back in the array to be shown.
+                    : # Do nothing.
+                else
+                    echo "${CD_SPACE}${stack_key}: ${CD_STACK[$stack_key]}" # print the key: value pair with the arrow pointer.
+                fi
+            fi
+        fi
+    done
+    echo "$frame"
+}
+
+# Setup the bindings to the keyboard.
+bind -r '"\ei"' # clear any binding for Alt-i
+bind -x '"\ei":cdStackForward' # Bind Alt-i to move forward in the stack.
+bind -r '"\eo"' # clear any binding for Alt-o
+bind -x '"\eo":cdStackBackward' # Bind Alt-o to move backward in the stack.
+bind -r '"\ep"' # clear any binding for Alt-p
+bind -x '"\ep":cdStackPrintStack' # Bind Alt-p to print the stack.
+
+# Start the stack off with the current PWD
+## This is only run when this file is sourced by .bashrc (so, once per terminal/bash session/etc.)
+cdStackAppend "$PWD"
+

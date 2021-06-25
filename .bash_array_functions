@@ -1,0 +1,125 @@
+# ARRAY INTROSPECTION
+# These are helper functions that show arrays. 
+# ↓↓↓ def __arrayNames()  -- Supporting function
+__arrayNames() {
+    # "returns" (via standard output) the list of current array names, both indexed and associative, one per line.
+    #  Named with a double underbar to denote "not to be used directly by the user".
+    #compgen -A arrayvar # Magic command from #bash on Freenode, user geirha. 08/18/20 17:55:03  Thanks!
+    declare -p | grep 'declare -[aA]' | tr -s ' ' | cut -d' ' -f3 | cut -d'=' -f1 # Better than the above line from geirha, because it print the names of the associative arrays as well as indexed arrays.
+}
+# ↑↑↑ END __arrayNames()
+# ↓↓↓ def __isAssociativeArray() -- Supporting function
+__isAssociativeArray() {
+    ## Returns status (true/false) if the array is an associated  array.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local candidate returnValue 
+    candidate="$1"
+    declare -p | grep "declare -A[r]* ${candidate}=" 1>/dev/null 2>/dev/null
+    returnValue=$? # The exit status of the above grep command. Did we find an "A"?
+    return "$returnValue"
+}
+# ↑↑↑ END __isAssociativeArray
+# ↓↓↓ def __printArrayDetails() -- Supporting function
+__printArrayDetails() {
+    ## Prints out the array's structure and contents.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local subjectArray rawDeclare rawContents idxKey counter 
+    subjectArray="$1"
+    declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
+    [[ "${#namerefToArray[@]}" -gt 1 ]] && counter="elements" || counter="element" # Make the anoying s problem go away.
+    echo "${subjectArray}:  ${#namerefToArray[@]} $counter" # Print the name of the array, and the number of elements in it.
+    if [[ "${#namerefToArray[*]}" == 0 ]]; then # if array is empty.
+        echo '    EMPTY'
+    else # Loop through the elements of the array and print them.
+        for idxKey in "${!namerefToArray[@]}"
+        do
+            echo "    [$idxKey]  -->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
+        done
+    fi
+}
+# ↑↑↑ END __printArrayDetails
+# ↓↓↓ def validArrayName() -- Supporting function
+validArrayName() {
+    ## Checks if the input is a valid array name.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local subject existingArray # Declare local variables to this function.
+    subject="$1"
+    for existingArray in $(__arrayNames)
+    do
+        if [[ "$existingArray" == "$subject" ]]; then # If we find the requested array in the list of current arrays.
+            return 0 # Return true. 
+        fi
+    done
+    return 1 # Return false, because we didn't find it.
+}
+# ↑↑↑ END validArrayName
+# ↓↓↓ def array() -- Master function
+array() {
+    #    array [ARRAY NAME]...
+    ## Returns via stdout the details of the array(s) named in the argument(s).
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local candidate __arr
+    if [[ $# -gt 0 ]]; then # We have arguments
+        for candidate in "$@" # For each argument.
+        do
+            candidate="$(echo "$candidate" | sed 's/[^a-zA-Z0-9_]/ /g')" # Remove all non alpha-numeric-unerbar characters.
+            if validArrayName "$candidate"; then # If the candidate is the name of an existing array.
+                __printArrayDetails "$candidate"
+            fi
+        done
+    else
+        while read __arr # For each name of an active array
+        do
+            array "$__arr" # Recursively call itself to print the details of that array.
+        done < <(__arrayNames) # Run the __arrayNames function in a subshell and feed it's output as though it were a file into the read loop.
+    fi
+}
+# ↑↑↑ END array
+# ↓↓↓ def arrays()
+arrays() {
+    ## Lists the names of the arrays, and how many members there are.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    array | \grep --color=no '^[^ ]' | column -s':' -t # Print the array names and number of elements in a nice table.
+}
+# ↑↑↑ END arrays
+# Stats on arrays
+# ↓↓↓ def maxValueLength()
+maxValueLength() {
+    ## returns the length of the longest value of the array.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local subjectArray val maxlen lenOfVal
+    [[ "$1" != '' ]] && subjectArray="$1" || return 1 # If we were sent an argument asign it to subjectArray.
+    maxlen=0
+    declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
+    if validArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
+        for val in "${namerefToArray[@]}" # For each element in the array.
+        do
+            lenOfVal="${#val}"
+            (( lenOfVal > maxlen )) && maxlen="$lenOfVal" # Update the max value.
+        done
+        echo $maxlen # This is how Bash returns info.
+        return 0 # Used for success/failure of the function. Success in this case.
+    fi
+    return 1 # We didn't get the name of a real array.
+}
+# ↑↑↑ END maxValueLength
+# ↓↓↓ def maxKeyLength()
+maxKeyLength() {
+    ## returns the length of the longest key of the array.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local subjectArray val maxlen lenOfKey
+    [[ "$1" != '' ]] && subjectArray="$1" || return 1 # If we were sent an argument asign it to subjectArray.
+    maxlen=0
+    declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
+    if validArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
+        for val in "${!namerefToArray[@]}" # For each element in the array.
+        do
+            lenOfKey="${#val}"
+            (( lenOfKey > maxlen )) && maxlen="$lenOfKey" # Update the max value.
+        done
+        echo $maxlen # This is how Bash returns info.
+        return 0 # Used for success/failure of the function. Success in this case.
+    fi
+    return 1 # We didn't get the name of a real array.
+}
+# ↑↑↑ END maxKeyLength

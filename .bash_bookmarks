@@ -1,0 +1,61 @@
+#!/bin/bash
+
+declare -A bookmarks
+
+b()
+{
+    # changes the current directory to the bookmark named by $1.
+    bookmarkName="$1"
+    if [[ -v bookmarks[$bookmarkName] ]]; then
+        cd "${bookmarks["$bookmarkName"]}"
+    else
+        echo "Bookmark "$bookmarkName" not set."
+    fi
+}
+
+ba()
+{
+    # Add a bookmark.
+    local bookmarkName bookmarkDir
+    bookmarkName="$1"
+    bookmarkDir="$2"
+    bookmarks["$bookmarkName"]="$bookmarkDir"
+}
+
+_delete-bookmark-by-path()
+{
+    # Delete a bookmark by name or by path.
+    local input inputPath cononicalPath mark
+    input="$1"
+    # Find the bookmark that links to that path.
+    inputPath="$input"
+    cononicalPath="$(readlink -f "$inputPath")"
+    for mark in "${!bookmarks[@]}"
+    do
+        if [[ "$cononicalPath" = "${bookmarks[$mark]}" ]]; then
+            unset "${bookmarks[$mark]}"
+        fi
+    done
+    return 0
+}
+
+_delete-bookmark-by-name()
+{
+    # Delete a bookmark by name
+    local input
+    input="$1"
+    unset bookmarks[$input] # Delete the bookmark
+}
+
+bd()
+{
+    # Deletes a bookmark by name or path
+    local input
+    input="$1"
+    if [[ "$input" =~ ^\./ ]] || [[ "$input" =~ ^/ ]]; then # It's a path
+        _delete-bookmark-by-path "$*" 
+    elif [[ -v ${bookmarks[$input]} ]]; then # It's a name
+        _delete-bookmark-by-name "$@"
+    fi
+}
+

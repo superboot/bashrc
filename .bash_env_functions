@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# ↓↓↓ def showVars()
+showVars() {
+    ## Print an easy to read list of key-value pairs, with values truncatedfor screen width.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local line key keyLen val valLen screenWidth maxValWidth separator lengthOfLongestKey maxValWidth keyPad manySpaces
+    if [[ $# -eq 0 ]]; then  # This will be true when called by the user.
+        showVars <(env) | sort -d # here we save the env so it doesn't get clobbered by this function.
+    fi
+    if setColors; then 
+        separator="$red-->$normal"
+    else
+        separator="-->" # We don't have colors, so just do it in monochrome.
+    fi
+    lengthOfLongestKey="$(env | cut -d'=' -f1 | lengthOfLongestLine)"
+    manySpaces='                                        '
+    manySpaces=${manySpaces}${manySpaces}${manySpaces}
+    manySpaces=${manySpaces}${manySpaces}${manySpaces}
+    while read line;
+    do
+        key="${line%%=*}"
+        keyLen=${#key}
+        keyPad="${manySpaces:0:$(( lengthOfLongestKey - keyLen ))}" # Get a string of spaces to fill the detla.
+        val="${line#*=}"
+        valLen=${#val}
+        screenWidth=$COLUMNS # Bash built in.
+        maxValWidth=$(( screenWidth - lengthOfLongestKey - 15 )) # -15 for formatting characters.
+        if [[ "$valLen" -gt "$maxValWidth" ]]; then
+            val="${val:0:$maxValWidth}\"..." # Truncate val to max width.
+        else
+            val="$val\""
+        fi
+        echo "${key}${keyPad}  $separator  \"$val"
+    done < <(env)
+}
+# ↑↑↑ END showVars
+# ↓↓↓ def truncateVal()
+truncateVal() {
+    ## truncate the value to its max width for the current screen width.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local line key keyLen val valLen screenWidth maxValWidth
+    line="$*"
+    key="${line%%=*}"
+    keyLen=${#key}
+    val="${line#*=}"
+    valLen=${#val}
+    screenWidth=$COLUMNS # Bash built in.
+    maxValWidth=$(( screenWidth - keyLen - 15 )) # -15 for formatting characters.
+    if [[ "$valLen" -gt "$maxValWidth" ]]; then
+        val="${val:0:$maxValWidth}\"..." # Truncate val to max width.
+    fi
+    echo "$val\"" # The escaped quote is for output formatting.
+}
+# ↑↑↑ END truncateVal
+
+
+

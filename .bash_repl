@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# ↓↓↓ def tmuxREPLinterface()
+tmuxREPLinterface() {
+    ## launches a new tmux session to communicate with the REPL.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    if weAreRunningX; then
+        :
+    fi
+    #tmux new-session -d -c "$PWD" -n 'BDB $0' -s 'BASH_DEBUG' -x 5760 -y 1072 
+    tmux new-session -d -c "$PWD" -n 'BDB $0' -s 'BASH_DEBUG' 
+    tmux send-keys -t BDB:1.1 "debash-read" ENTER # Setup the output window pane
+    tmux split-window -t BDB:1 -bh -p 10  debash-write # Setup the input window pane
+    tmux -2 attach-session -t LFT
+}
+# ↑↑↑ END tmuxREPLinterface
+# ↓↓↓ def repl()
+repl() {
+    ## A basic read-evaluate-print-loop for bash. Useful as a debuging tool.
+    ##   This function serves as the breakpoint to interact with the environment.
+    ##   It uses fifos to facilitate communication. This allows it to be embeded inside read loops etc... I think.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    local debugPipeInput debugPipeOutput commandline greeting
+    debugPipeInput="$HOME/.bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
+    debugPipeOutput="$HOME/.bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
+    greeting="REPL started. See the FIFOs at ~/.bash_debug_{input,output}"
+    exec 9< "$debugPipeInput" # This creates a file descriptor that opens the input fifo for reading.
+    exec 10> "$debugPipeOutput" # This creates a file descriptor that opens the output fifo for writing.
+
+    echo "$greeting" # print the greeting message
+
+    while true
+    do
+        while read commandline
+        do
+            echo "Got command: $commandline"
+            case "$commandline" in
+                q|Q|quit|exit)
+                    echo "Thank you. Good bye." 1>&10 # send a parting message.
+                    return 0 # Exit repl
+                    ;;
+                *)
+                    echo "Sending: eval $commandline"
+                    eval "$commandline" 1>&10 # Evaluate the commandline and send the output to file descriptor 10 (the fifo on disk).
+                    echo finished eval.
+                    ;;
+            esac
+        done <&9 
+    done
+}
+# ↑↑↑ END repl
+# ↓↓↓ def weAreInBDB()
+weAreInBDB() {
+    ## Checks if we are already in the BDB tmux session.
+    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    :
+}
+# ↑↑↑ END weAreInBDB
+

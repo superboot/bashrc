@@ -1,0 +1,6 @@
+function tmuxPaste() { tmux paste-buffer; }
+function tmuxCopyMode() { tmux copy-mode; }
+bind -r '"\ev"'
+bind -x '"\ev":tmuxPaste'
+bind -r '"\ec"'
+bind -x '"\ec":tmuxCopyMode'
