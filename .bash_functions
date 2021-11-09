@@ -55,13 +55,20 @@ listShellOptions() {
 sortu() { sort -d | uniq -u; }
 # ↑↑↑ END def sortu: That uniq'ing pipeline you always need.
 # ↓↓↓ def latestFile()
-latestFile() {
-    local _DOCSTRING="Returns the name of the file most recently modified in the current directory."
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local rv
-    rv="$(ls -1tr | tail -n1)"
-    echo -n "$rv" # Echo the return value, without a trailing newline (-n).
+latestFileInDir() {
+    local _DOCSTRING="Returns the name of the file most recently modified in the supplied directory, or PWD if none. (taken from wooledge.org)"
+    local _USAGE="Usage: latestFileInDir [dir=.]"
+    local  dir
+    dir=${1:-.}
+
+    local file latest
+
+    for file in in "${dir}"/*
+    do
+        if [[ $file -nt $latest ]]; then 
+            latest=$file
+        fi
+    done
+    printf '%s\n' "$latest" 
 }
 # ↑↑↑ END latestFile
-
-

@@ -119,8 +119,9 @@ alias t='tmux '
 # Proton VPN
 alias vpn='protonvpn-cli'
 
+
 # Git
 alias gs='git status'
-alias gc='git commit -m'
+#alias gc='git commit -m' # Converted to a function.
 alias ga='git add'
 alias gl='git log'

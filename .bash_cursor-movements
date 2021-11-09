@@ -1,0 +1,17 @@
+# Functions that utilize ANSI escape codes to position/move the cursor.
+#   Source: https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
+#   Source: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+
+cToXY() { printf '\033['"${2}"\;"${1}"f; } # If this doesn't work, try th alternate escape sequence by changing the ending 'f' to an 'H'
+cU() { printf '\033['"$1"'A'; } # n lines up
+cD() { printf '\033['"$1"'B'; } # n lines down
+cF() { printf '\033['"$1"'C'; } # n lines forward
+cB() { printf '\033['"$1"'D'; } # n lines backward
+cS() { printf '\033[2J'; } # Clear the screen
+killToEndOfLine() { printf '\033[K'; }
+saveCursorPosition() { printf '\033[s'; }
+restoreSavedCursorPosition() { printf '\033[u'; }
+invisableCursor() { printf '\033[?25l'; }
+visableCursor() {  printf '\033[?25h'; }
+
+

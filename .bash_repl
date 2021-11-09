@@ -8,10 +8,10 @@ tmuxREPLinterface() {
         :
     fi
     #tmux new-session -d -c "$PWD" -n 'BDB $0' -s 'BASH_DEBUG' -x 5760 -y 1072 
-    tmux new-session -d -c "$PWD" -n 'BDB $0' -s 'BASH_DEBUG' 
-    tmux send-keys -t BDB:1.1 "debash-read" ENTER # Setup the output window pane
-    tmux split-window -t BDB:1 -bh -p 10  debash-write # Setup the input window pane
-    tmux -2 attach-session -t LFT
+    tmux new-session -d -c "$PWD" -n 'BDB' -s 'BASH_DEBUG' 
+    tmux send-keys -t BASH_DEBUG:1.1 "clear; debash-read" ENTER # Setup the output window pane
+    tmux split-window -t BASH_DEBUG:1 -bh -p 10  debash-write # Setup the input window pane
+    tmux -2 attach-session -t BASH_DEBUG
 }
 # ↑↑↑ END tmuxREPLinterface
 # ↓↓↓ def repl()
@@ -24,8 +24,8 @@ repl() {
     debugPipeInput="$HOME/.bash/.bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
     debugPipeOutput="$HOME/.bash/.bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
     greeting="REPL started. See the FIFOs at ~/.bash_debug_{input,output}"
-    exec 9< "$debugPipeInput" # This creates a file descriptor that opens the input fifo for reading.
-    exec 10> "$debugPipeOutput" # This creates a file descriptor that opens the output fifo for writing.
+    exec 8< "$debugPipeInput" # This creates a file descriptor that opens the input fifo for reading.
+    exec 9> "$debugPipeOutput" # This creates a file descriptor that opens the output fifo for writing.
 
     echo "$greeting" # print the greeting message
 
@@ -36,16 +36,16 @@ repl() {
             echo "Got command: $commandline"
             case "$commandline" in
                 q|Q|quit|exit)
-                    echo "Thank you. Good bye." 1>&10 # send a parting message.
+                    echo "Thank you. Good bye." 1>&9 # send a parting message.
                     return 0 # Exit repl
                     ;;
                 *)
                     echo "Sending: eval $commandline"
-                    eval "$commandline" 1>&10 # Evaluate the commandline and send the output to file descriptor 10 (the fifo on disk).
+                    eval "$commandline" 1>&9 # Evaluate the commandline and send the output to file descriptor 9 (the fifo on disk).
                     echo finished eval.
                     ;;
             esac
-        done <&9 
+        done <&8 
     done
 }
 # ↑↑↑ END repl

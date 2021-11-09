@@ -1,3 +1,4 @@
+#set -x
 # ↓↓↓ Preamble
 #     ~/.bashrc: executed by bash(1) for non-login shells.
 #     see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
@@ -45,8 +46,8 @@ shopt -s checkwinsize
 [ -x /usr/bin/lesspipe ] && eval "$(lesspipe)"
 #↑↑↑
 # ↓↓↓ PROMPT COMMAND (Bash builtin)
-# PROMPT_COMMAND='history -a; printSuperbootsPS1Prompt'
-PROMPT_COMMAND='history -a; PS1="$(generatePrompt)"; isItTimeToThrowAParty; printSuperbootsPS1Prompt'
+#PROMPT_COMMAND='history -a; PS1="$(generatePrompt)"; isItTimeToThrowAParty; printSuperbootsInfoBar'
+PROMPT_COMMAND='history -a; printSuperbootsInfoBar'
 # ↑↑↑ END PROMPT COMMAND
 # ↓↓↓ PROMPT (PS1)
 #PS1='|$(echo $?)|$(date +%I:%M:%S)|\u@\h:\w🥛 '
@@ -54,8 +55,8 @@ PROMPT_COMMAND='history -a; PS1="$(generatePrompt)"; isItTimeToThrowAParty; prin
 PS1='[$(generateExitStatus $?)]$ ' # Let's keep things simple here.  If you want the prompt hit alt-h.
 . ~/.bash/.bash_dynamic_prompt_functions # Loads the supporting functions for the dynamic prompt.
 # ↑↑↑ END PROMPT (PS1)
-# ↓↓↓1 PROMPT FUNCTION printSuperbootsPS1Prompt()
-printSuperbootsPS1Prompt ()
+# ↓↓↓1 PROMPT FUNCTION printSuperbootsInfoBar()
+printSuperbootsInfoBar ()
 {
     local _s='-----------------------------'
     local bigPadString="$_s$_s$_s$_s$_s$_s$_s$_s$_s" # Create a long line of spaces.
@@ -75,8 +76,8 @@ printSuperbootsPS1Prompt ()
     echo "$prompt" # The acatul return value of the function.
 }
 bind -r '"\eh"' # clear any binding for Alt-h
-bind -x '"\eh":printSuperbootsPS1Prompt' # Bind Alt-h to print the prompt.
-# ↑↑↑1 END printSuperbootsPS1Prompt
+bind -x '"\eh":printSuperbootsInfoBar' # Bind Alt-h to print the prompt.
+# ↑↑↑1 END printSuperbootsInfoBar()
 # ↓↓↓ ALIASES
 if [ -f ~/.bash/.bash_aliases ]; then
     . ~/.bash/.bash_aliases
@@ -105,7 +106,8 @@ export RANGER_LOAD_DEFAULT_RC=FALSE
 #MAILPATH=/var/spool/mail/john && export MAILPATH
 # ↑↑↑ END EXPORTED ENVIRONMENT VARIABLES 
 # ↓↓↓ LOAD FUNCTIONS
-. ~/.bash/.bash_functions
+. "$HOME/.bash/.bash_functions"
+. "$HOME/.bash/.bash_git-helper-functions"
 # ↑↑↑ END LOAD FUNCTIONS
 # ↓↓↓ FBTERM CHECK
 [ -n "$FBTERM" ] && export TERM=fbter
@@ -127,9 +129,12 @@ stty -ixon
 # ↑↑↑ END FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # ↓↓↓ CD AND MARK SYSTEM.
 # Include the 'cd' overriding mark system functions.
-##  NOTE: this script calls the printSuperbootsPS1Prompt function from above in the PS1 section.
+##  NOTE: this script calls the printSuperbootsInfoBar function from above in the PS1 section.
 . $HOME/.bash/.bash_mark-system
 # ↑↑↑ END CD AND MARK SYSTEM.
+# ↓↓↓ repl
+. $HOME/.bash/.bash_repl
+# ↑↑↑ END repl
 
 # Set alt-v to paste from inside tmux with 'tmux paste-buffer' command.
 # . $HOME/.bash/.bash_tmux-paste
@@ -144,3 +149,9 @@ if command -v pyenv 1>/dev/null 2>&1; then
   eval "$(pyenv init -)"
 fi
 # ↑↑↑ END PYENV SPIN-UP
+# ↓↓↓ COMPLETIONS FOR CUSTOM SCRIPTS
+# Import the completions for custom scripts.
+. $HOME/.bash/.bash_completions
+# ↑↑↑ END COMPLETIONS FOR CUSTOM SCRIPTS
+#Chicken
+#if [[ $(( RANDOM % 10 )) == 1 ]]; then chicken; fi

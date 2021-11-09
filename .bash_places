@@ -23,3 +23,12 @@ cvaChecks="/mass/CVACorp/Money/${thisYear}/checks"
 
 #For Carrier calls:
 cccalls='/mass/Clients-Active/lasar/Production/2018/carrier-calls'
+
+# nanlo music
+nanlo='/home/john/media/audio/music/nanlo'
+
+# Ebooks
+books='/mass/john/books/'
+
+
+

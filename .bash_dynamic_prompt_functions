@@ -49,6 +49,7 @@ printWelcomeHome() {
 }
 # ↑↑↑ END printWelcomeHome
 # ↓↓↓ def generateExitStatus()
+# This version is broken.
 generateExitStatus() {
     local _DOCSTRING="Returns a fancy exit status that blinks red on failure."
     local _USAGE="Usage: generateExitStatus <status>"
@@ -59,11 +60,17 @@ generateExitStatus() {
     status=$1
 
     if [[ "$status" != 0 ]]; then
-        echo "$red$status$normal"
+        echo "$red$status$normal" # This is broken, because history display during treversal displays incorrectly.
     else
         echo "$status"
     fi
     return 0
+}
+# ↑↑↑ END generateExitStatus
+# ↓↓↓ def generateExitStatus()
+# This is a crappy way to remove a broken function without finding everywhere it is called, and also without actually fixing the problem. 10/19/21 11:24:am -Superboot
+generateExitStatus() {
+    printf "%s" "$1"
 }
 # ↑↑↑ END generateExitStatus
 

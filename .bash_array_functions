@@ -11,7 +11,6 @@ __arrayNames() {
 # ↓↓↓ def __isAssociativeArray() -- Supporting function
 __isAssociativeArray() {
     ## Returns status (true/false) if the array is an associated  array.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
     local candidate returnValue 
     candidate="$1"
     declare -p | grep "declare -A[r]* ${candidate}=" 1>/dev/null 2>/dev/null
@@ -22,8 +21,11 @@ __isAssociativeArray() {
 # ↓↓↓ def __printArrayDetails() -- Supporting function
 __printArrayDetails() {
     ## Prints out the array's structure and contents.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local subjectArray rawDeclare rawContents idxKey counter 
+    local subjectArray rawDeclare rawContents idxKey counter format
+
+    format='cat' # Default filter to do nothing.
+    [[ "$1" == '--reverse' ]] && { format=tac; shift; } # If we were sent a reverse flag, enable the reverse filter.
+
     subjectArray="$1"
     declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
     [[ "${#namerefToArray[@]}" -gt 1 ]] && counter="elements" || counter="element" # Make the anoying s problem go away.
@@ -34,14 +36,13 @@ __printArrayDetails() {
         for idxKey in "${!namerefToArray[@]}"
         do
             echo "    [$idxKey]  -->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
-        done
+        done | "$format"
     fi
 }
 # ↑↑↑ END __printArrayDetails
-# ↓↓↓ def validArrayName() -- Supporting function
-validArrayName() {
+# ↓↓↓ def existingArrayName() -- Supporting function
+existingArrayName() {
     ## Checks if the input is a valid array name.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
     local subject existingArray # Declare local variables to this function.
     subject="$1"
     for existingArray in $(__arrayNames)
@@ -52,25 +53,25 @@ validArrayName() {
     done
     return 1 # Return false, because we didn't find it.
 }
-# ↑↑↑ END validArrayName
+# ↑↑↑ END existingArrayName
 # ↓↓↓ def array() -- Master function
 array() {
     #    array [ARRAY NAME]...
     ## Returns via stdout the details of the array(s) named in the argument(s).
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local candidate __arr
+    local candidate __arr reverse
+    [[ "$1" == '--reverse' ]] && { reverse=--reverse; shift; } # If we were sent a reverse flag, enable the reverse filter.
     if [[ $# -gt 0 ]]; then # We have arguments
         for candidate in "$@" # For each argument.
         do
             candidate="$(echo "$candidate" | sed 's/[^a-zA-Z0-9_]/ /g')" # Remove all non alpha-numeric-unerbar characters.
-            if validArrayName "$candidate"; then # If the candidate is the name of an existing array.
-                __printArrayDetails "$candidate"
+            if existingArrayName "$candidate"; then # If the candidate is the name of an existing array.
+                __printArrayDetails $reverse "$candidate" # $reverse has no quotes so it will expand to nothing if it is empty.
             fi
         done
     else
         while read __arr # For each name of an active array
         do
-            array "$__arr" # Recursively call itself to print the details of that array.
+            array $reverse "$__arr" # Recursively call itself to print the details of that array.
         done < <(__arrayNames) # Run the __arrayNames function in a subshell and feed it's output as though it were a file into the read loop.
     fi
 }
@@ -78,20 +79,45 @@ array() {
 # ↓↓↓ def arrays()
 arrays() {
     ## Lists the names of the arrays, and how many members there are.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    array | \grep --color=no '^[^ ]' | column -s':' -t # Print the array names and number of elements in a nice table.
+    #functionTracingDebug "$@"
+    local prefix selections LONG item
+    # Parse options
+    while [[ "$1" =~ ^- ]]
+    do
+        case "$1" in
+            -l|--long) # Print the elements of each array.
+                LONG=true
+                shift
+                ;;
+        esac
+    done
+
+    if [[ "$1" != '' ]]; then
+        prefix="$1" # The prefix to filter the arrays by.
+        selections="$(compgen -A arrayvar "$prefix" | tr '\n' ' ')"
+    fi
+
+    if [[ "$LONG" == true ]]; then
+        for item in $selections
+        do
+            array "$item"
+        done
+        return 0
+    else
+        array $selections | \grep --color=no '^[^ ]' | column -s':' -t # Print the array names and number of elements in a nice table.
+    fi
 }
 # ↑↑↑ END arrays
 # Stats on arrays
 # ↓↓↓ def maxValueLength()
 maxValueLength() {
     ## returns the length of the longest value of the array.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local subjectArray val maxlen lenOfVal
     [[ "$1" != '' ]] && subjectArray="$1" || return 1 # If we were sent an argument asign it to subjectArray.
     maxlen=0
     declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
-    if validArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
+    if existingArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
         for val in "${namerefToArray[@]}" # For each element in the array.
         do
             lenOfVal="${#val}"
@@ -106,12 +132,12 @@ maxValueLength() {
 # ↓↓↓ def maxKeyLength()
 maxKeyLength() {
     ## returns the length of the longest key of the array.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local subjectArray val maxlen lenOfKey
     [[ "$1" != '' ]] && subjectArray="$1" || return 1 # If we were sent an argument asign it to subjectArray.
     maxlen=0
     declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
-    if validArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
+    if existingArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
         for val in "${!namerefToArray[@]}" # For each element in the array.
         do
             lenOfKey="${#val}"
@@ -123,3 +149,88 @@ maxKeyLength() {
     return 1 # We didn't get the name of a real array.
 }
 # ↑↑↑ END maxKeyLength
+
+
+# Stack
+declare -a _STACK # The default stack array.
+_DEFSTACK="_STACK" # The variable to track the default stack.
+# ↓↓↓ def push()
+push() {
+    local _DOCSTRING="Push a value onto the stack."
+    local _USAGE="Usage: push <val>"
+    functionTracingDebug "$@"
+
+    local  val namerefToStk
+    minimumArguments 1 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    val=$1
+
+    declare -n namerefToStk="$_DEFSTACK" # Create a nameref pointing at the array, so we can manipulate it.
+    namerefToStk+=("$val")
+}
+# ↑↑↑ END push
+# ↓↓↓ def pop()
+pop() {
+    local _DOCSTRING="Pop the last item from the _STACK, removing it from the array and returning it."
+    local _USAGE="Usage: pop "
+    functionTracingDebug "$@"
+
+    local namerefToStk
+    declare -n namerefToStk="$_DEFSTACK" # Create a nameref pointing at the array, so we can manipulate it.
+    
+    _RETURN="${namerefToStk[-1]}"
+    echo "$_RETURN"
+    unset namerefToStk[-1]
+}
+# ↑↑↑ END pop
+# ↓↓↓ def STACK_displayStack()
+STACK_displayStack() {
+    local _DOCSTRING="Prints a listing of the elements on the stack"
+    local _USAGE="Usage: STACK_displayStack <stack>"
+    functionTracingDebug "$@"
+
+    local  stack
+    minimumArguments 1 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    stack=$1
+
+    array --reverse "$stack"| sed 's/^_STACK_//g' 
+    
+}
+# ↑↑↑ END STACK_displayStack
+# ↓↓↓ def stack()
+stack() {
+    local _DOCSTRING="With no arugments, prints the default stack. With the optional argument, inits and sets as the default the specified stack."
+    local _USAGE="Usage: stack [stk=_STACK]"
+    functionTracingDebug "$@"
+
+    local  stk
+    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    stk=${1:-_STACK}
+    
+    if [[ ! "$stk" == "_STACK" ]]; then # If we got a specified stack, build it's name.
+        stk="_STACK_$stk"
+    fi
+
+    _DEFSTACK="$stk"
+    if existingArrayName "$stk"; then
+        : # Do nothing.
+    else
+        declare -g -a "$stk" # init the array in the global scope.
+        return 0 # Return now, so we don't print the details of an empty array.
+    fi
+
+    STACK_displayStack "$stk"
+}
+# ↑↑↑ END stack
+# ↓↓↓ def stacks()
+stacks() {
+    local _DOCSTRING="Print a list of all the stacks."
+    local _USAGE="Usage: stacks "
+    functionTracingDebug "$@"
+    local stack
+
+    for stack in "${!_STACK@}" # For each array starting with _STACK*
+    do
+        STACK_displayStack "$stack"
+    done
+}
+# ↑↑↑ END stacks

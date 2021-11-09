@@ -4,31 +4,160 @@
 . $HOME/.bash/.bash_env_functions # The environment interrogation functions.
 
 
-debugLog="$HOME/.dbout"
+# Related global vars.
+## Default log files.
+unset DEBUG # Turn db* logging off. Set to any value to turn on.
+export _debugLog="$HOME/.log/dbout.log"
+unset funcTrace # Turn functionTracingDebug header logging off. Set to any value to turn on.
+export _functraceLog="$HOME/.log/functrace.log"
 
+
+# Debugging & Program info
 # ↓↓↓ def db()
 db() {
-    # This is like echo, but checks if the DEBUG variable is set (to anything).
+    local _DOCSTRING="Log a debug message. Takes optional alternate logfile as 2nd arg."
+    local _USAGE="Usage: db [_log=/alternate/logfile] <message>"
+
+    local  message logfile
+    minimumArguments 1 "$@" || return 3
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_debugLog"
+    fi
+    message="$*"
+
     if [[ -v DEBUG ]]; then
-        echo "$*" >> $debugLog
+        echo "${message:-BLANK}" >> "$logfile"
     fi
 }
-# ↑↑↑ END db()
+# ↑↑↑ END db
+# ↓↓↓ def dbfail()
+dbfail() {
+    local _DOCSTRING="Log a debug FAIL message. Takes optional alternate logfile as 2nd arg."
+    local _USAGE="Usage: db <message> [logfile="$debugLog"]"
+    local  message logfile
+    minimumArguments 1 "$@" || return 3
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_debugLog"
+    fi
+
+    message="$*"
+
+    db "_log=$logfile" "${bold}${red}FAIL${normal} -- ${message:-BLANK}"
+}
+# ↑↑↑ END dbfail
+# ↓↓↓ def dbSuccess()
+dbSuccess() {
+    local _DOCSTRING="Log a debug SUCCESS message. Takes optional alternate logfile as 2nd arg."
+    local _USAGE="Usage: db <message> [logfile="$debugLog"]"
+    local  message logfile
+    minimumArguments 1 "$@" || return 3
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_debugLog"
+    fi
+
+    message="$*"
+
+    db "_log=$logfile" "${bold}${green}SUCCESS${normal} -- ${message:-BLANK}" 
+}
+# ↑↑↑ END dbfail
+# ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
+functionTracingDebug() {
+    local _DOCSTRING="Logs information about the function call this function was called from."
+    local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
+
+    local logfile args indent depth callingFunction fourSpaces
+
+    if [[ ! -v functionTracingDebug ]]; then # Are we enabled?
+        return 0
+    fi
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_functraceLog"
+    fi
+
+    args=( "$@" )
+    depth="$(( ${#FUNCNAME[*]} - 1 ))"
+    callingFunction="${FUNCNAME[1]}"
+    fourSpaces='    '
+    for level in "$(seq "$depth")"
+    do
+        indent="$indent$fourSpaces"
+    done
+
+    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
+}
+# ↑↑↑ END functionTracingDebug
+# ↓↓↓ def stackTrace()
+stackTrace() {
+    ## Prints a stack trace. Needs work... TODO Make this better.
+    functionTracingDebug "$@"
+    local idx
+    for (( idx=1; idx<="${#FUNCNAME[*]}"; idx++ ))
+    do
+        caller "$idx"
+    done
+}
+# ↑↑↑ END stackTrace
+
+# UI utilities
 # ↓↓↓ def setColors()
 setColors() {
     ## Sets global variables for term specific color escape codes.
     ### Variables are in the global scope.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     if [[ ! -v colorsSet ]]; then
         if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
             # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
             red=$(tput setaf 1) &&
+            alertRed=$(tput setaf 196) &&
+            rustyRed=$(tput setaf 95) &&
+            seriouslyRed=$(tput setaf 88) &&
+            liabilityPink=$(tput setaf 211) &&
             green=$(tput setaf 2) &&
+            aquaMarine=$(tput setaf 79) &&
+            cvagDark=$(tput setaf 65) &&
+            cvagMed=$(tput setaf 78) &&                 # AKA, "Electric".
+            cvagLight=$(tput setaf 114) &&
+            cvagLightest=$(tput setaf 194) &&
             yellow=$(tput setaf 3) &&
+            peach=$(tput setaf 224) &&
+            warmOrange=$(tput setaf 173) &&
+            travexOrange=$(tput setaf 214) &&
+            lemon=$(tput setaf 179) &&
+            taxexYellow=$(tput setaf 11) &&
             blue=$(tput setaf 4) &&
+            blueMidnight=$(tput setaf 17) &&
+            dodgerBlue=$(tput setaf 33) &&
+            fancyBlue=$(tput setaf 21) &&
+            slsbDark=$(tput setaf 24) &&
+            slsbMed=$(tput setaf 31) &&                 # AKA, "Starry night".
+            slsbLight=$(tput setaf 116) &&
+            slsbLightest=$(tput setaf 188) &&
             purple=$(tput setaf 5) &&
+            princePurpleDarkest=$(tput setaf 53) &&
+            princePurpleDark=$(tput setaf 90) &&
+            princePurple=$(tput setaf 127) &&
+            princePurpleLight=$(tput setaf 200) &&
+            powder=$(tput setaf 152) &&
+            boldOrange=$(tput setaf 178) &&
+            sunFlower=$(tput setaf 220) &&
+            tinGray=$(tput setaf 102) &&
             cyan=$(tput setaf 6) &&
-            blink=$(tput blink) &&
             bold=$(tput bold) &&
             normal=$(tput sgr0) &&
             colorsSet=true ||
@@ -39,143 +168,12 @@ setColors() {
     return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
     fi
 }
+
 # ↑↑↑ END setColors
-# ↓↓↓ def runInBackground()
-runInBackground() {
-    # Runs the command in $1 with all following args supplied, in the background and with output sent to /dev/null
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    "$1" "${@:2}" 2>/dev/null >/dev/null & 
-}
-# ↑↑↑ END runInBackground()
-# ↓↓↓ def readInput ()
-readInput() {
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    # Function signature.
-    #    readInput "message" "length" 
-    local answer
-    local len
-    if [[ "x$2" != x ]]; then # if we got $2
-        len="-n $2"
-    fi
-    read "$len" -p "$1" answer
-    echo "${answer}"
-}
-# ↑↑↑ END readInput
-# ↓↓↓ def raiseError() 
-raiseError() {
-    # Function signature.
-    # error ExitStatus(int) Message(string) 
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    echo "Error: $2" >&2 # Send error message to standard error.
-}
-# ↑↑↑ END raiseError()
-# ↓↓↓ def raiseErrorAndExit() 
-raiseErrorAndExit() {
-    # Function signature.
-    # error ExitStatus(int) Message(string) 
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    echo "Error: $2" >&2 # Send error message to standard error.
-    exit $1
-}
-# ↑↑↑ END raiseErrorAndExit()
-# ↓↓↓ def warning()
-warning() {
-    local _DOCSTRING="Print a warning message to stderr and continue."
-    local _DOCSTRING+="  Usage:  warning [message]"
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    
-    local default
-    default="Something non-fatal went wrong."
-    echo "Warning: ${1:-$default}" >&2 # Send error message to standard error.
-}
-# ↑↑↑ END warning
-# ↓↓↓ def spaceToDash() 
-spaceToDash() {
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    echo ${*// /-} # Replace spaces with dashes.
-}
-# ↑↑↑ END spaceToDash()
-# ↓↓↓ def dashToSpace() 
-dashToSpace() {
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    echo ${*//-/ } # Replace spaces with dashes.
-}
-# ↑↑↑ END dashToSpace()
-# ↓↓↓ def dashToUnderbar() 
-dashToUnderbar() {
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    echo ${*//-/_} # Replace dashes with underbars.
-}
-# ↑↑↑ END dashToUnderbar()
-# ↓↓↓ def findAudioPlayer()
-findAudioPlayer() {
-    # Returns the full path to the first audio player it finds.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local candidate 
-    for candidate in mpg321 mpg123 mplayer cvlc
-    do
-        which "$candidate" >/dev/null && { echo $(which "$candidate"); return; }
-    done
-    raiseError 1 "No audio player found."
-}
-# ↑↑↑ END findAudioPlayer
-# ↓↓↓ def cleanup()
-cleanup() {
-    ## this function will make sure that the environment is clean for the program to run.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    [[ "$DEBUG" == true ]] && :>$debugLog # erase the contents of the debug log.
-}
-# ↑↑↑ END cleanup
-# ↓↓↓ def listArgs()
-listArgs() {
-    ## Lists the arguments sent to it, in a readable, numbered, quoted list.
-    local arg list 
-    declare -i count # Make a counter using bash's "integer" type.
-    list=''
-    while [[ ${#@} -gt -0 ]] # Build the arg list.
-    do
-        count+=1
-        list+="[$count]: \"$1\", "
-        shift # Pop the stack of args. 
-    done
-    echo "$list" # Return the list.
-}
-# ↑↑↑ END listArgs
-# ↓↓↓ def listArgsLong()
-listArgsLong() {
-    ## Docstring
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local arg args list 
-    declare -i count # Make a counter using bash's "integer" type.
-    list=()
-    while [[ ${#@} -gt -0 ]] # Build the arg list.
-    do
-        count+=1
-        args+=("$1") # Append to the array.
-        shift # Pop the stack of args. 
-    done
-    array args # Using the builtin function "array" from ~/.bash_array_functions
-}
-# ↑↑↑ END listArgsLong
-# ↓↓↓ def minimumArguments()
-minimumArguments() {
-    ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
-    # Call:   minimumArguments <minimumArgumentsRequired> <arguments>
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
-    local minimumArgumentsRequired numberOfArgsSupplied callingFunction
-    callingFunction="${FUNCNAME[1]}"
-    minimumArgumentsRequired="$1"
-    shift # clear $1 and shift all args down one.
-    numberOfArgsSupplied="$#"
-    [[ "$minimumArgumentsRequired" =~ [^0-9] ]] && raiseError 3 "${callingFunction}: Invalid non-integer 'minimum number of arguments' argument supplied." && return 3 # if we have anything but a number as input, error out.
-    [[ "$numberOfArgsSupplied" -lt "$minimumArgumentsRequired" ]] && raiseError 3 "${callingFunction}: Too few arguments. Got $numberOfArgsSupplied of the $minimumArgumentsRequired required: $(listArgs "$@") " && return 3 # If there is a miss-match in the number of arguments, report an error, naming the parent function.
-    return 0 # Success. There are the correct number of arguments.
-}
-# ↑↑↑ END minimumArguments
 # ↓↓↓ def highlightSearchTerm()
 highlightSearchTerm() {
     ## Highlights the search $term in the $string and returns the modified string.
-    db entering $FUNCNAME  with args: "$(listArgs $@)" # Standard debug line.
+    functionTracingDebug "$@"
     local term string word result 
     [[ ! -v highlightColor ]] && declare -n highlightColor=red # If a highlight color hasn't been chosen, set the highlightColor variable as a bash nameref to point to the value of the named color.
     declare -a termArr # Local array for the words in the search.
@@ -203,28 +201,110 @@ highlightSearchTerm() {
     echo "$result" # Return the result.
 }
 # ↑↑↑ END highlightSearchTerm
-# ↓↓↓ def stackTrace()
-stackTrace() {
-    ## Prints a stack trace. Needs work... TODO Make this better.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local idx
-    for (( idx=1; idx<="${#FUNCNAME[*]}"; idx++ ))
+
+# Flow control
+# ↓↓↓ def runInBackground()
+runInBackground() {
+    # Runs the command in $1 with all following args supplied, in the background and with output sent to /dev/null
+    functionTracingDebug "$@"
+    "$1" "${@:2}" 2>/dev/null >/dev/null & 
+}
+# ↑↑↑ END runInBackground()
+# ↓↓↓ def readInput ()
+readInput() {
+    functionTracingDebug "$@"
+    # Function signature.
+    #    readInput "message" "length" 
+    local answer
+    local len
+    if [[ "x$2" != x ]]; then # if we got $2
+        len="-n $2"
+    fi
+    read "$len" -p "$1" answer
+    echo "${answer}"
+}
+# ↑↑↑ END readInput
+# ↓↓↓ def yesNo()
+yesNo() {
+    local _DOCSTRING="Asks for a response of yes or no. Returns true or false."
+    local _USAGE="Usage: yesNo <question>"
+    functionTracingDebug "$@"
+
+    local  question
+    minimumArguments 1 "$@" || return 3
+    question=$1
+    local answer
+
+    while true
     do
-        caller "$idx"
+        read -n 1 -p "$question"': ' answer
+        echo # Adds a carage return after the answer is given. Annoying this isn't default.
+        case "$answer" in
+            y|Y)
+                return 0
+                ;;
+            n|N)
+                return 1
+                ;;
+            *)
+                echo "Please try again. Type 'Y' or 'N' please."
+        esac
     done
 }
-# ↑↑↑ END stackTrace
-# ↓↓↓ def weAreRunningX()
-weAreRunningX() {
-    ## Check if we are running an X11 server. Return true if we are and false if not.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    [[ -v DISPLAY ]] && return 0 || return 1 # If we are running an X11 display the $DISPLAY variable will be set.
+# ↑↑↑ END yesNo
+
+# ↓↓↓ def raiseError() 
+raiseError() {
+    # Function signature.
+    # error ExitStatus(int) Message(string) 
+    functionTracingDebug "$@"
+    echo "Error: $2" >&2 # Send error message to standard error.
 }
-# ↑↑↑ END weAreRunningX
+# ↑↑↑ END raiseError()
+# ↓↓↓ def raiseErrorAndExit() 
+raiseErrorAndExit() {
+    # Function signature.
+    # error ExitStatus(int) Message(string) 
+    functionTracingDebug "$@"
+    echo "Error: $2" >&2 # Send error message to standard error.
+    exit $1
+}
+# ↑↑↑ END raiseErrorAndExit()
+# ↓↓↓ def warning()
+warning() {
+    local _DOCSTRING="Print a warning message to stderr and continue."
+    local _DOCSTRING+="  Usage:  warning [message]"
+    functionTracingDebug "$@"
+    
+    local default
+    default="Something non-fatal went wrong."
+    echo "Warning: ${1:-$default}" >&2 # Send error message to standard error.
+}
+# ↑↑↑ END warning
+
+# Strings: manipulation & interrogation 
+# ↓↓↓ def spaceToDash() 
+spaceToDash() {
+    functionTracingDebug "$@"
+    echo ${*// /-} # Replace spaces with dashes.
+}
+# ↑↑↑ END spaceToDash()
+# ↓↓↓ def dashToSpace() 
+dashToSpace() {
+    functionTracingDebug "$@"
+    echo ${*//-/ } # Replace spaces with dashes.
+}
+# ↑↑↑ END dashToSpace()
+# ↓↓↓ def dashToUnderbar() 
+dashToUnderbar() {
+    functionTracingDebug "$@"
+    echo ${*//-/_} # Replace dashes with underbars.
+}
+# ↑↑↑ END dashToUnderbar()
 # ↓↓↓ def lengthOfLongestLine()
 lengthOfLongestLine() {
     ## Returns the length of the longest line.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local file line longestLength
     longestLength=0
     if [[ $# -gt -0 ]]; then # Check if we were given a file name. If not, read from stdin.
@@ -240,50 +320,53 @@ lengthOfLongestLine() {
     return 0
 }
 # ↑↑↑ END lengthOfLongestLine
+# Paths: manipulation
 # ↓↓↓ def basename()
 basename() {
     ## Wraps the core-utils basename program to support reading from stdin.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local bn
     bn='/usr/bin/basename'
     if [[ $# -lt 1 ]]; then
         $bn $(cat -) # Read from stdin.
     else
-        $bn $1
+        $bn "$@"
     fi
 }
 # ↑↑↑ END basename
-# ↓↓↓ def varsafe()
-varsafe() {
-    ## Sanatizes a string to be safe as a variable name.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    local line safeString
-    if [[ $# -lt 1 ]]; then
-        while read line
-        do
-            varsafe "$line"
-        done
-    else
-        safeString="$(echo "$1" | sed 's/^[^_a-zA-Z]*\([_a-zA-Z][_a-zA-Z0-9]*\).*/\1/g')"
-        if [[ "$safeString" != '' ]]; then
-            echo "$safeString"
-        fi
-    fi
-    
+
+# Environment manipulation & interrogation
+# ↓↓↓ def findAudioPlayer()
+findAudioPlayer() {
+    # Returns the full path to the first audio player it finds.
+    functionTracingDebug "$@"
+    local candidate 
+    for candidate in mpg321 mpg123 mplayer cvlc
+    do
+        which "$candidate" >/dev/null && { echo $(which "$candidate"); return; }
+    done
+    raiseError 1 "No audio player found."
 }
-# ↑↑↑ END varsafe
-# ↓↓↓ def vars()
-vars() {
-    local _DOCSTRING="Prints out the variables set in the environment."
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
-    declare -p | grep '^declare -- '
+# ↑↑↑ END findAudioPlayer
+# ↓↓↓ def weAreRunningX()
+weAreRunningX() {
+    ## Check if we are running an X11 server. Return true if we are and false if not.
+    functionTracingDebug "$@"
+    [[ -v DISPLAY ]] && return 0 || return 1 # If we are running an X11 display the $DISPLAY variable will be set.
 }
-# ↑↑↑ END vars
+# ↑↑↑ END weAreRunningX
+# ↓↓↓ def cleanup()
+cleanup() {
+    ## this function will make sure that the environment is clean for the program to run.
+    functionTracingDebug "$@"
+    [[ "$DEBUG" == true ]] && :>$debugLog # erase the contents of the debug log.
+}
+# ↑↑↑ END cleanup
 # ↓↓↓ def functions()
 functions() {
     local _DOCSTRING="Lists the functions defined in the current environment."
     local _USAGE="Usage: functions "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
     local line func extdebugSave arg filter message
 
     extdebugSave="$(shopt -p extdebug)"
@@ -311,10 +394,25 @@ functions() {
     $extdebugSave # Set it back to what it was before.
 }
 # ↑↑↑ END functions
-# ↓↓↓ def describe()
+# ↓↓↓ def vars()
+vars() {
+    local _DOCSTRING="Prints out the variables set in the environment."
+    functionTracingDebug "$@"
+    declare -p | grep '^declare -[-aAx] '
+}
+# ↑↑↑ END vars
+# ↓↓↓ def describe()                  # This is a very handy function.
 describe() {
     local _DOCSTRING="Prints the source code for a defined function. Usage: describe <function>"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
+    case "$1" in
+        --help | -h)
+            echo
+            echo $_DOCSTRING
+            echo
+            return
+            ;;
+    esac
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
     local func extdebugSave lineNumber sourceFileName
     func="$1"
@@ -327,6 +425,350 @@ describe() {
     echo "${green}Definition:$normal"
     } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
     $extdebugSave # Set it back to what it was before.
-    declare -f "$func" # Print out the function definition.
+    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
+        if [[ -x "$(which pygmentize)" ]]; then
+            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
+        else
+            _SYNTAX_HIGHLIGHTER="$(which cat)"
+        fi
+    fi
+
+    declare -f "$func" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
 }
+complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
 # ↑↑↑ END describe
+# ↓↓↓ def _describeExtended()         # This is a work in progress.
+_describeExtended() {
+    local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
+    functionTracingDebug "$@"
+    case "$1" in
+        --help | -h)
+            echo
+            echo $_DOCSTRING
+            echo
+            return
+            ;;
+    esac
+    minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
+    local func extdebugSave lineNumber sourceFileName
+    func="$1"
+    extdebugSave="$(shopt -p extdebug)"
+
+    shopt -s extdebug
+    declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
+    echo "${green}Source:$normal $sourceFileName"
+    echo "${green}Line number:$normal $lineNumber"
+    echo "${green}Definition:$normal"
+    } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
+    $extdebugSave # Set it back to what it was before.
+    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
+        if [[ -x "$(which pygmentize)" ]]; then
+            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
+        else
+            _SYNTAX_HIGHLIGHTER="$(which cat)"
+        fi
+    fi
+
+    declare -f "$func" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
+}
+complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
+# ↑↑↑ END _describeExtended
+
+# Function aids & interrogation
+# ↓↓↓ def listArgs()
+listArgs() {
+    ## Lists the arguments sent to it, in a readable, numbered, quoted list.
+    local arg list 
+    declare -i count # Make a counter using bash's "integer" type.
+    list=''
+    while [[ ${#@} -gt -0 ]] # Build the arg list.
+    do
+        count+=1
+        list+="[$count]: \"$1\", "
+        shift # Pop the stack of args. 
+    done
+    echo "$list" # Return the list.
+}
+# ↑↑↑ END listArgs
+# ↓↓↓ def listArgsLong()
+listArgsLong() {
+    local _DOCSTRING="Pretty prints the argv args."
+    local argList=( "$@" )
+    array argList # Using the function "array" from ~/.bash_array_functions
+}
+# ↑↑↑ END listArgsLong
+# ↓↓↓ def minimumArguments()
+minimumArguments() {
+    ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
+    # Call:   minimumArguments <minimumArgumentsRequired> <arguments>
+    local minimumArgumentsRequired numberOfArgsSupplied callingFunction
+    callingFunction="${FUNCNAME[1]}"
+    minimumArgumentsRequired="$1"
+    shift # clear $1 and shift all args down one.
+    numberOfArgsSupplied="$#"
+    [[ "$minimumArgumentsRequired" =~ [^0-9] ]] && raiseError 3 "${callingFunction}: Invalid non-integer 'minimum number of arguments' argument supplied." && return 3 # if we have anything but a number as input, error out.
+    [[ "$numberOfArgsSupplied" -lt "$minimumArgumentsRequired" ]] && raiseError 3 "${callingFunction}: Too few arguments. Got $numberOfArgsSupplied of the $minimumArgumentsRequired required: $(listArgs "$@") " && return 3 # If there is a miss-match in the number of arguments, report an error, naming the parent function.
+    return 0 # Success. There are the correct number of arguments.
+}
+# ↑↑↑ END minimumArguments
+
+# Operators, tests, and boolians
+# ↓↓↓ def varsafe()
+varsafe() {
+    ## Sanatizes a string to be safe as a variable name.
+    functionTracingDebug "$@"
+    local line safeString
+    if [[ $# -lt 1 ]]; then
+        while read line
+        do
+            varsafe "$line"
+        done
+    else
+        safeString="$(echo "$1" | sed 's/^[^_a-zA-Z]*\([_a-zA-Z][_a-zA-Z0-9]*\).*/\1/g')"
+        if [[ "$safeString" != '' ]]; then
+            echo "$safeString"
+        fi
+    fi
+    
+}
+# ↑↑↑ END varsafe
+# ↓↓↓ def max()
+max() {
+    local _DOCSTRING="Returns the max of two arguments."
+    local _USAGE="Usage: max <a> <b>"
+    functionTracingDebug "$@"
+
+    local  a b result
+    minimumArguments 2 "$@" || return 1 # Returns false if there are not enough arguments.
+    a=$1
+    b=$2
+    if [[ ! "$a" =~ [0-9]* ]] || [[ ! "$a" =~ [0-9]* ]]; then # Check input to be integers.
+        return 1 # Return false if an argument is not an int.
+    fi
+    [[ "$a" -gt "$b" ]] && result="$a" || result="$b" # Set $result to the larger of $a and $b.
+    echo "$result" # Return the result.
+}
+# ↑↑↑ END max
+# ↓↓↓ def min()
+min() {
+    local _DOCSTRING="Returns the max of two arguments."
+    local _USAGE="Usage: max <a> <b>"
+    functionTracingDebug "$@"
+
+    local  a b result
+    minimumArguments 2 "$@" || return 1 # Returns false if there are not enough arguments.
+    a=$1
+    b=$2
+    if [[ ! "$a" =~ [0-9]* ]] || [[ ! "$a" =~ [0-9]* ]]; then # Check input to be integers.
+        return 1 # Return false if an argument is not an int.
+    fi
+    [[ "$a" -lt "$b" ]] && result="$a" || result="$b" # Set $result to the larger of $a and $b.
+    echo "$result" # Return the result.
+}
+# ↑↑↑ END min
+
+# Filesystem interrogation
+# ↓↓↓ def latestFileInDir()
+latestFileInDir() {
+    local _DOCSTRING="Returns the name (no path) of the file most recently modified in the supplied directory, or PWD if none. (taken from wooledge.org)"
+    local _USAGE="Usage: latestFileInDir [dir=.]"
+    functionTracingDebug "$@"
+
+    local  dir 
+    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    dir=${1:-.}
+
+    local file latest justTheFilename
+
+    for file in in "${dir}"/*
+    do
+        if [[ "$file" -nt "$latest" ]]; then 
+            latest="$file"
+        fi
+    done
+    justTheFilename="$(basename "$latest")"
+    echo "$justTheFilename" 
+}
+# ↑↑↑ END latestFileInDir
+# ↓↓↓ def newestFileInDir()
+newestFileInDir() {
+    local _DOCSTRING="Same as latestFileInDir."
+    latestFileInDir "$@"
+}
+# ↑↑↑ END newestFileInDir
+# ↓↓↓ def latestFile()
+latestFile() {
+    local _DOCSTRING="Wrapper for latestFileInDir."
+    latestFileInDir
+}
+# ↑↑↑ END latestFile
+# ↓↓↓ def oldestFileInDir()
+oldestFileInDir() {
+    local _DOCSTRING="Returns name (no path) of the file least recently modified in the supplied directory, or PWD if none. (modified from from wooledge.org)"
+    local _USAGE="Usage: oldestFileInDir [dir=.]"
+    functionTracingDebug "$@"
+
+    local  dir
+    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    dir="${1:-.}"
+
+    local files fileUnderTest oldestFileFound justTheFilename
+    files=("${1:-.}"/*) # Glob of all files in dir. THERE IS AN EDGE CASE BUG. IT DOESN'T INCLUDE DOT FILES (.file). See shopt -s dotglob.
+    oldestFileFound="${files[0]}"
+    for fileUnderTest in "${files[@]}"
+    do
+        [[ "$fileUnderTest" -ot "$oldestFileFound" ]] && oldestFileFound="$fileUnderTest"
+    done
+
+    justTheFilename="$(basename "$oldestFileFound")"
+
+    printf '%s\n' "$justTheFilename"
+}
+# ↑↑↑ END oldestFileInDir
+# ↓↓↓ def mostRecentlyModifiedDirectory()
+mostRecentlyModifiedDirectory() {
+    local _DOCSTRING="Returns the basename of the most recently modified directory at the optional [dir]."
+    local _USAGE="Usage: mostRecentlyModifiedDirectory [dir]"
+    local  dir
+    dir=${1:-.}
+
+    local file latest
+
+    for file in in "${dir}"/*
+    do
+        if [[ -d "$file" ]] && [[ "$file" -nt "$latest" ]]; then 
+            latest="$file"
+        fi
+    done
+    if [[ "$latest" == '' ]]; then
+        return 1
+    else
+        printf '%s\n' "$latest" 
+    fi
+}
+# ↑↑↑ END mostRecentlyModifiedDirectory
+# ↓↓↓ def numberOfFilesInDir()
+numberOfFilesInDir() {
+    local _DOCSTRING="prints the number of files in the specified directory, or pwd."
+    local _USAGE="Usage: numberOfFilesInDir [dir=.]"
+    local  dir filesInDir
+
+    dir=${1:-.}
+
+    filesInDir=( $dir/* )
+
+    echo "${#filesInDir[*]}"
+}
+# ↑↑↑ END numberOfFilesInDir
+# ↓↓↓ def numberOfsubDirs()
+numberOfsubDirs() {
+    local _DOCSTRING="prints the number of subdirectories in the specified directory, or pwd."
+    local _USAGE="Usage: numberOfsubDirs [dir=.]"
+    local  dir subdirs f count
+
+    dir=${1:-.}
+
+    for f in "$dir"/*
+    do
+        [[ -d "$f" ]] && ((count++))
+    done
+
+    echo "$count"
+}
+# ↑↑↑ END numberOfsubDirs
+## BTRFS Specific interrogations
+# ↓↓↓ def numberOfSubvols()
+numberOfSubvols() {
+    local _DOCSTRING="Prints the number of BTRFS subvolumes in the specified directory, or pwd. (Does not decent the tree to search recursively.)"
+    local _USAGE="Usage: numberOfSubvols [dir=.]"
+    functionTracingDebug "$@"
+    local  dir subvols f count
+
+    dir=${1:-.}
+
+    for f in "$dir"/*
+    do
+        isSubvolume "$f" && ((count++)) # If $f is a subvol, increase the count. Throw out any output from the BTRFS command.
+    done
+    echo "$count"
+}
+# ↑↑↑ END numberOfSubvols
+# ↓↓↓ def isSubvolume()
+isSubvolume() {
+    local _DOCSTRING="Returns true/false depending on if the supplied dir (or pwd) is a btrfs subvolume."
+    local _USAGE="Usage: isSubvolume [dir=.]"
+    functionTracingDebug "$@"
+
+    local  dir 
+    dir=${1:-.}
+
+    local inode fstype
+    inode="$(stat -c %i "$dir")"
+    fstype="$(stat -f -c %T "$dir")"
+    if [[ "$inode" == 256 ]] && [[ "$fstype" == btrfs ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+# ↑↑↑ END isSubvolume
+# ↓↓↓ def oldestSnapshotInDir()
+oldestSnapshotInDir() {
+    local _DOCSTRING="Returns name (no path) of the BTRFS snapshot least recently modified in the supplied directory, or PWD if none. (modified from from wooledge.org)"
+    local _USAGE="Usage: oldestFileInDir [dir=.]"
+    functionTracingDebug "$@"
+
+    local  dir
+    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    dir="${1:-.}"
+
+    local files fileUnderTest snapshotUnderTest oldestSnapshotFound justTheFilename snapshots
+    files=("${1:-.}"/*) # Glob of all files in dir. THERE IS AN EDGE CASE BUG. IT DOESN'T INCLUDE DOT FILES (.file). See shopt -s dotglob.
+    for fileUnderTest in "${files[@]}" # Filter for subvolumes
+    do
+        isSubvolume "$fileUnderTest" && snapshots+=( "$fileUnderTest" )
+    done
+
+    oldestSnapshotFound="${snapshots[0]}"
+    for snapshotUnderTest in "${snapshots[@]}"
+    do
+        [[ "$snapshotUnderTest" -ot "$oldestSnapshotFound" ]] && oldestSnapshotFound="$snapshotUnderTest"
+    done
+
+    justTheFilename="$(basename "$oldestSnapshotFound")"
+
+    printf '%s\n' "$justTheFilename"
+}
+# ↑↑↑ END oldestFileInDir
+
+
+
+# Trash old legacy junk.
+:<<EOF
+# ↓↓↓ def setColors()
+setColors() {
+    ## Sets global variables for term specific color escape codes.
+    ### Variables are in the global scope.
+    functionTracingDebug "$@"
+    if [[ ! -v colorsSet ]]; then
+        if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
+            # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
+            red=$(tput setaf 1) &&
+            green=$(tput setaf 2) &&
+            yellow=$(tput setaf 3) &&
+            blue=$(tput setaf 4) &&
+            purple=$(tput setaf 5) &&
+            cyan=$(tput setaf 6) &&
+            blink=$(tput blink) &&
+            bold=$(tput bold) &&
+            normal=$(tput sgr0) &&
+            colorsSet=true ||
+            return 1 # Something went wrong in the assignments.
+        else
+            return 1 # We don't have color capability.
+        fi
+    return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
+    fi
+}
+# ↑↑↑ END setColors
+EOF

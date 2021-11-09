@@ -3,7 +3,7 @@
 # ↓↓↓ def showVars()
 showVars() {
     ## Print an easy to read list of key-value pairs, with values truncatedfor screen width.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local line key keyLen val valLen screenWidth maxValWidth separator lengthOfLongestKey maxValWidth keyPad manySpaces
     if [[ $# -eq 0 ]]; then  # This will be true when called by the user.
         showVars <(env) | sort -d # here we save the env so it doesn't get clobbered by this function.
@@ -38,7 +38,7 @@ showVars() {
 # ↓↓↓ def truncateVal()
 truncateVal() {
     ## truncate the value to its max width for the current screen width.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local line key keyLen val valLen screenWidth maxValWidth
     line="$*"
     key="${line%%=*}"
