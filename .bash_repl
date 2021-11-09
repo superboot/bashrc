@@ -3,7 +3,7 @@
 # ↓↓↓ def tmuxREPLinterface()
 tmuxREPLinterface() {
     ## launches a new tmux session to communicate with the REPL.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     if weAreRunningX; then
         :
     fi
@@ -19,7 +19,7 @@ repl() {
     ## A basic read-evaluate-print-loop for bash. Useful as a debuging tool.
     ##   This function serves as the breakpoint to interact with the environment.
     ##   It uses fifos to facilitate communication. This allows it to be embeded inside read loops etc... I think.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     local debugPipeInput debugPipeOutput commandline greeting
     debugPipeInput="$HOME/.bash/.bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
     debugPipeOutput="$HOME/.bash/.bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
@@ -52,7 +52,7 @@ repl() {
 # ↓↓↓ def weAreInBDB()
 weAreInBDB() {
     ## Checks if we are already in the BDB tmux session.
-    db entering $FUNCNAME  with args: "$@" # Standard debug line.
+    functionTracingDebug "$@"
     :
 }
 # ↑↑↑ END weAreInBDB

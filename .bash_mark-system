@@ -93,7 +93,7 @@ m ()
 delm() {
     local _DOCSTRING="Delete a mark."
     local _USAGE="Usage: delm mark"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  mark
     minimumArguments 1 "$@" || return 3 # Quits the entire script if there are not enough arguments.
@@ -106,7 +106,7 @@ delm() {
 MARKS_persistMarkToDisk() {
     local _DOCSTRING="Adds the current mark to the persistant disk file of marks. Mark must be upper-case."
     local _USAGE="Usage: persistMarkToDisk path mark"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  path mark
     minimumArguments 2 "$@" || return 3 # Quits the entire script if there are not enough arguments.
@@ -122,7 +122,7 @@ MARKS_persistMarkToDisk() {
 MARKS_removeTempMark() {
     local _DOCSTRING="Removes the temoporary (lower-case) marks from the environment array."
     local _USAGE="Usage: MARKS_removeTempMark mark"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  mark
     minimumArguments 1 "$@" || return 3 # Quits the entire script if there are not enough arguments.
@@ -136,7 +136,7 @@ MARKS_removeTempMark() {
 MARKS_removePersistentMark() {
     local _DOCSTRING="Removes a mark from the on-disk marks file."
     local _USAGE="Usage: MARKS_removePersistentMark <mark>"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  mark
     minimumArguments 1 "$@" || return 3 # Quits the entire script if there are not enough arguments.
@@ -153,7 +153,7 @@ MARKS_removePersistentMark() {
 MARKS_readMarksFile() {
     local _DOCSTRING="Reads in the marks file and creates the marks in the environment."
     local _USAGE="Usage: MARKS_readMarksFIle "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local readMark readPath
 
@@ -169,7 +169,7 @@ MARKS_readMarksFile() {
 MARKS_writeMarksFile() {
     local _DOCSTRING="Overwrite the contents of the marks file with the contents of the marks array."
     local _USAGE="Usage: MARKS_writeMarksFile "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local mark path line
 
@@ -270,7 +270,7 @@ cd ()
 cdDisplayHelp() {
     local _DOCSTRING="Display the usage information."
     local _USAGE="Usage: cdDisplayHelp "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     echo "$MARKS_usage"
 }
@@ -367,7 +367,7 @@ cdStackPrintStack ()
 {
     local _DOCSTRING="Print the default number of lines of the path history."
     local _USAGE="Usage: cdStackPrintStackLong [HEADLINES] [TAILLINES]"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local frame='#------------#'
     local stack_key cd_local_headlines cd_local_taillines # Declare named variables as local to this function.
@@ -393,7 +393,7 @@ cdStackPrintStack ()
 cdStackPrintStackLong() {
     local _DOCSTRING="Print a full screen of the path history."
     local _USAGE="Usage: cdStackPrintStackLong"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  headLines tailLines printSize
     headLines=$1 
@@ -442,7 +442,7 @@ cdToMostRecent() {
 cdTo20Places() {
     local _DOCSTRING="Changes directory to 20 directories to populate the cd stack."
     local _USAGE="Usage: cdAllOverThePlace "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
     
     local place
 
@@ -456,7 +456,7 @@ cdTo20Places() {
 testCdLong() {
     local _DOCSTRING="test the cd long function"
     local _USAGE="Usage: testCdLong "
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     source ~/.bash/.bash_utility_functions
     source ~/.bash/.bash_mark-system

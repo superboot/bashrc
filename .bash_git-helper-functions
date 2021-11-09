@@ -2,7 +2,7 @@
 gc() {
     local _DOCSTRING="Git commit shortcut."
     local _USAGE="Usage: gc <commitMessage>"
-    db "[${#FUNCNAME[*]}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  commitMessage
     minimumArguments 1 "$@" || return 3

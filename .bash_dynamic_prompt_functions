@@ -53,7 +53,7 @@ printWelcomeHome() {
 generateExitStatus() {
     local _DOCSTRING="Returns a fancy exit status that blinks red on failure."
     local _USAGE="Usage: generateExitStatus <status>"
-    db "[${#FUNCLIST}] entering  $FUNCNAME  with args: $(listArgs $@)" # The funclist piece says what depth level we are at.
+    functionTracingDebug "$@"
 
     local  status
     minimumArguments 1 "$@" || exit 3 # Quits the entire script if there are not enough arguments.

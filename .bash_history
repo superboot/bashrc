@@ -2175,3 +2175,39 @@ mkdir backup
 cp .* backup
 #1636466266
 gs
+#1636466289
+ga .bash*
+#1636466290
+gs
+#1636466320
+gc modified and added functions.
+#1636466336
+gs
+#1636466355
+man git-add
+#1636466677
+cd .bash
+#1636466678
+llt
+#1636466911
+man ex
+#1636467213
+llt
+#1636467242
+man sed
+#1636467267
+sed -i.back 's/db .*entering.*with args.*/functionTracingDebug "\$@"/g' .bash*
+#1636467277
+vim .bash_array_functions
+#1636467296
+llt
+#1636467297
+la
+#1636467308
+mkdir backup/sedback
+#1636467318
+mv .*.back backup/sedback/
+#1636467320
+lla
+#1636467333
+gs
