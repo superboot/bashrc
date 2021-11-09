@@ -712,63 +712,57 @@ isSubvolume() {
     fi
 }
 # ↑↑↑ END isSubvolume
+# ↓↓↓ def btrfsSubvolCreationTimeEpoc()
+btrfsSubvolCreationTimeEpoc() {
+    local _DOCSTRING="Return the epoc time for the creation of a btrfs subvolume."
+    local _USAGE="Usage: btrfsSubvolCreationTimeEpoc <path>"
+    functionTracingDebug "$@"
+
+    local  path
+    minimumArguments 1 "$@" || return 3
+    path=$1
+
+    local timestamp epocTime 
+
+    if ! isSubvolume "$path"; then
+        dbfail "$path is not a BTRFS subvolume"; return 1
+    fi
+    timestamp="$(sudo btrfs subvolume show "$path" | grep 'Creation time' | tr -s ' ' | cut -d' ' -f3-4)" # Scrape the creation timestamp from btrfs's show subcomand.
+    timestamp="2${timestamp##*2}" # Kill leading whitespace.
+    epocTime="$(date -d "$timestamp" '+%s')" # Convert time to seconds since 01/01/1970.
+    echo "$epocTime"
+}
+# ↑↑↑ END btrfsSubvolCreationTimeEpoc
 # ↓↓↓ def oldestSnapshotInDir()
 oldestSnapshotInDir() {
-    local _DOCSTRING="Returns name (no path) of the BTRFS snapshot least recently modified in the supplied directory, or PWD if none. (modified from from wooledge.org)"
+    local _DOCSTRING="Returns the name (no path) of the BTRFS snapshot least recently modified in the supplied directory, or PWD if none. (modified from from wooledge.org)"
     local _USAGE="Usage: oldestFileInDir [dir=.]"
     functionTracingDebug "$@"
 
     local  dir
-    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
     dir="${1:-.}"
 
-    local files fileUnderTest snapshotUnderTest oldestSnapshotFound justTheFilename snapshots
+    local files fileUnderTest snapshotUnderTest oldestSnapshotFound justTheFilename snapshots oldestTimestamp timestampOfFileUnderTest
     files=("${1:-.}"/*) # Glob of all files in dir. THERE IS AN EDGE CASE BUG. IT DOESN'T INCLUDE DOT FILES (.file). See shopt -s dotglob.
     for fileUnderTest in "${files[@]}" # Filter for subvolumes
     do
         isSubvolume "$fileUnderTest" && snapshots+=( "$fileUnderTest" )
     done
 
-    oldestSnapshotFound="${snapshots[0]}"
+    oldestSnapshotFound="${snapshots[0]}" # A guess to start with.
+    oldestTimestamp="$(btrfsSubvolCreationTimeEpoc "$oldestSnapshotFound")"
     for snapshotUnderTest in "${snapshots[@]}"
     do
-        [[ "$snapshotUnderTest" -ot "$oldestSnapshotFound" ]] && oldestSnapshotFound="$snapshotUnderTest"
+        timestampOfFileUnderTest="$(btrfsSubvolCreationTimeEpoc "$snapshotUnderTest")"
+        if [[ "$timestampOfFileUnderTest" < "$oldestTimestamp" ]]; then # We found a new "oldest".
+            oldestSnapshotFound="$snapshotUnderTest"
+            oldestTimestamp="$timestampOfFileUnderTest"
+        fi
     done
 
     justTheFilename="$(basename "$oldestSnapshotFound")"
 
-    printf '%s\n' "$justTheFilename"
+    echo "$justTheFilename"
 }
 # ↑↑↑ END oldestFileInDir
 
-
-
-# Trash old legacy junk.
-:<<EOF
-# ↓↓↓ def setColors()
-setColors() {
-    ## Sets global variables for term specific color escape codes.
-    ### Variables are in the global scope.
-    functionTracingDebug "$@"
-    if [[ ! -v colorsSet ]]; then
-        if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
-            # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
-            red=$(tput setaf 1) &&
-            green=$(tput setaf 2) &&
-            yellow=$(tput setaf 3) &&
-            blue=$(tput setaf 4) &&
-            purple=$(tput setaf 5) &&
-            cyan=$(tput setaf 6) &&
-            blink=$(tput blink) &&
-            bold=$(tput bold) &&
-            normal=$(tput sgr0) &&
-            colorsSet=true ||
-            return 1 # Something went wrong in the assignments.
-        else
-            return 1 # We don't have color capability.
-        fi
-    return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
-    fi
-}
-# ↑↑↑ END setColors
-EOF
