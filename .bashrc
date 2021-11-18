@@ -155,3 +155,6 @@ fi
 # ↑↑↑ END COMPLETIONS FOR CUSTOM SCRIPTS
 #Chicken
 #if [[ $(( RANDOM % 10 )) == 1 ]]; then chicken; fi
+if [[ -v TMUX ]]; then
+    echo -en "\033]0;TMUX\a" #Doesn't work from inside tmux... Dumb. 11/10/21 02:50:pm 
+fi

@@ -21,8 +21,8 @@ repl() {
     ##   It uses fifos to facilitate communication. This allows it to be embeded inside read loops etc... I think.
     functionTracingDebug "$@"
     local debugPipeInput debugPipeOutput commandline greeting
-    debugPipeInput="$HOME/.bash/.bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
-    debugPipeOutput="$HOME/.bash/.bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
+    debugPipeInput="$HOME/.bash/bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
+    debugPipeOutput="$HOME/.bash/bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
     greeting="REPL started. See the FIFOs at ~/.bash_debug_{input,output}"
     exec 8< "$debugPipeInput" # This creates a file descriptor that opens the input fifo for reading.
     exec 9> "$debugPipeOutput" # This creates a file descriptor that opens the output fifo for writing.
@@ -42,6 +42,7 @@ repl() {
                 *)
                     echo "Sending: eval $commandline"
                     eval "$commandline" 1>&9 # Evaluate the commandline and send the output to file descriptor 9 (the fifo on disk).
+                    echo "[Exit: $?]" 1>&9 # Send the exit status.
                     echo finished eval.
                     ;;
             esac

@@ -18,29 +18,53 @@ db() {
     local _DOCSTRING="Log a debug message. Takes optional alternate logfile as 2nd arg."
     local _USAGE="Usage: db [_log=/alternate/logfile] <message>"
 
-    local  message logfile
-    minimumArguments 1 "$@" || return 3
+    local  message logfile caller
 
-    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
-        logfile=${1#_log=}
-        shift
-    else
-        logfile="$_debugLog"
+    if [[ -v FUNCNAME[1] ]]; then # If we called from inside a function.
+        caller="${FUNCNAME[1]}"
     fi
+
+    logfile="$_debugLog" # Default that can be overridden by argument options.
+    while [[ "$1" =~ ^_.*= ]]
+    do
+        case "$1" in
+            _log=*)
+                logfile=${1#_log=}
+                shift
+                ;;
+            _caller=*)
+                caller=${1#_caller=}
+                shift
+                ;;
+        esac
+    done
+
+    if [[ "$caller" != '' ]]; then
+        caller="[$red$caller$normal] " # Color the caller red.
+    fi
+
     message="$*"
 
     if [[ -v DEBUG ]]; then
-        echo "${message:-BLANK}" >> "$logfile"
+        echo "${caller}${message:-BLANK}" >> "$logfile"
     fi
 }
 # ↑↑↑ END db
-# ↓↓↓ def dbfail()
-dbfail() {
-    local _DOCSTRING="Log a debug FAIL message. Takes optional alternate logfile as 2nd arg."
+# ↓↓↓ def dbFail()
+dbFail() {
+    local _DOCSTRING="Log a debug SUCCESS message. Takes optional alternate logfile as 2nd arg."
     local _USAGE="Usage: db <message> [logfile="$debugLog"]"
     local  message logfile
     minimumArguments 1 "$@" || return 3
 
+    local caller logarg
+
+    if [[ -v FUNCNAME[1] ]]; then # If we called from inside a function.
+        caller="_caller=${FUNCNAME[1]}" # String to send to standard db() to tell it who called us.
+    else
+        caller="_caller=" # This will expand into a blank, which will tell db() to not print [caller] portion.
+    fi
+
     if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
         logfile=${1#_log=}
         shift
@@ -49,10 +73,11 @@ dbfail() {
     fi
 
     message="$*"
+    logarg="_log=$logfile"
 
-    db "_log=$logfile" "${bold}${red}FAIL${normal} -- ${message:-BLANK}"
+    db "_log=$logfile" "$caller" "${bold}${red}FAIL${normal} -- ${message:-BLANK}" 
 }
-# ↑↑↑ END dbfail
+# ↑↑↑ END dbFail
 # ↓↓↓ def dbSuccess()
 dbSuccess() {
     local _DOCSTRING="Log a debug SUCCESS message. Takes optional alternate logfile as 2nd arg."
@@ -60,6 +85,14 @@ dbSuccess() {
     local  message logfile
     minimumArguments 1 "$@" || return 3
 
+    local caller logarg
+
+    if [[ -v FUNCNAME[1] ]]; then # If we were called from inside a function.
+        caller="_caller=${FUNCNAME[1]}" # String to send to standard db() to tell it who called us.
+    else
+        caller="_caller=" # This will expand into a blank, which will tell db() to not print [caller] portion.
+    fi
+
     if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
         logfile=${1#_log=}
         shift
@@ -68,10 +101,45 @@ dbSuccess() {
     fi
 
     message="$*"
+    logarg="_log=$logfile"
 
-    db "_log=$logfile" "${bold}${green}SUCCESS${normal} -- ${message:-BLANK}" 
+    db "_log=$logfile" "$caller" "${bold}${green}SUCCESS${normal} -- ${message:-BLANK}" 
 }
-# ↑↑↑ END dbfail
+# ↑↑↑ END dbSuccess()
+# ↓↓↓ def dblv()
+dblv() {
+    local _DOCSTRING="Send the listVarsLong output to the debugLog like db() does."
+    local _USAGE="Usage: dblv <varName>"
+    functionTracingDebug "$@"
+
+    minimumArguments 1 "$@" || return 3
+
+    local arg caller
+    declare -a options
+    declare -a vars
+
+    if [[ -v FUNCNAME[1] ]]; then # If we called from inside a function.
+        caller="_caller=${FUNCNAME[1]}" # String to send to standard db() to tell it who called us.
+    else
+        caller="_caller=" # This will expand into a blank, which will tell db() to not print [caller] portion.
+    fi
+
+    for arg in "$@"
+    do
+        case "$arg" in
+            _*=)
+                options+=("$arg")
+                ;;
+            *)
+                vars+=("$arg")
+                ;;
+        esac
+    done
+
+    db "${options[@]}" "$caller" "$(listVarsLong "${vars[@]}")"
+}
+# ↑↑↑ END dblv
+
 # ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
 functionTracingDebug() {
     local _DOCSTRING="Logs information about the function call this function was called from."
@@ -79,7 +147,7 @@ functionTracingDebug() {
 
     local logfile args indent depth callingFunction fourSpaces
 
-    if [[ ! -v functionTracingDebug ]]; then # Are we enabled?
+    if [[ ! -v funcTrace ]]; then # Are we enabled?
         return 0
     fi
 
@@ -113,6 +181,16 @@ stackTrace() {
     done
 }
 # ↑↑↑ END stackTrace
+# ↓↓↓ def debugStringItAlong()
+debugStringItAlong() {
+    local _DOCSTRING="Checks the snap date vars. Very specific to the rotate-snapshots script debugging session."
+    local _USAGE="Usage: debugStringItAlong "
+    functionTracingDebug "$@"
+
+    stringitAlong="$snapYear-$snapMonth-$snapDay--$dateCode"
+    db "$stringitAlong"
+}
+# ↑↑↑ END debugStringItAlong
 
 # UI utilities
 # ↓↓↓ def setColors()
@@ -201,6 +279,26 @@ highlightSearchTerm() {
     echo "$result" # Return the result.
 }
 # ↑↑↑ END highlightSearchTerm
+# ↓↓↓ def command_not_found_handle()
+command_not_found_handle() { 
+    if describe "$@"; then
+        return $?
+    fi
+
+    if [ -x /usr/lib/command-not-found ]; then
+        /usr/lib/command-not-found -- "$1";
+        return $?;
+    fi
+
+    if [ -x /usr/share/command-not-found/command-not-found ]; then
+        /usr/share/command-not-found/command-not-found -- "$1";
+        return $?;
+    fi
+
+    printf "%s: command not found\n" "$1" 1>&2;
+    return 127;
+}
+# ↑↑↑ END command_not_found_handle
 
 # Flow control
 # ↓↓↓ def runInBackground()
@@ -282,7 +380,7 @@ warning() {
 }
 # ↑↑↑ END warning
 
-# Strings: manipulation & interrogation 
+# Strings: manipulation & introspection 
 # ↓↓↓ def spaceToDash() 
 spaceToDash() {
     functionTracingDebug "$@"
@@ -320,6 +418,129 @@ lengthOfLongestLine() {
     return 0
 }
 # ↑↑↑ END lengthOfLongestLine
+# ↓↓↓ def repeatString()
+repeatString() {
+    local _DOCSTRING="Returns the given string repeated N times."
+    local _USAGE="Usage: repeatString <string> <n>"
+    functionTracingDebug "$@"
+
+    local  string n
+    minimumArguments 2 "$@" || return 3
+    string=$1
+    n=$2
+
+    local NOTUSED returnValue
+    
+    for NOTUSED in $(seq "$n")
+    do
+        returnValue="$returnValue$string"
+    done
+    printf '%s' "$returnValue"
+}
+# ↑↑↑ END repeatString
+# ↓↓↓ def centerStringInString()
+centerStringInString() {
+    local _DOCSTRING="Centers the smaller string inside the larger string."
+    local _USAGE="Usage: centerStringInString <stringA> <stringB>"
+    functionTracingDebug "$@"
+
+    local  stringA stringB big small delta frontEndText backEndText lenFront lenBack backEndStart frontAndSmall result lenBig lenSmall lenFrontAndSmall
+    minimumArguments 2 "$@" || return 3
+    stringA="$1"
+    stringB="$2"
+
+    local swapTemp
+
+    if [[ "${#stringA}" -gt "${#stringB}" ]]; then
+        big="$stringA"
+        small="$stringB"
+    else
+        small="$stringA"
+        big="$stringB"
+    fi
+
+    lenBig="${#big}"
+    lenSmall="${#small}"
+
+    delta="$(( lenBig - lenSmall ))"
+    lenFront="$(( delta / 2 ))"
+
+    frontEndText="${big:0:$lenFront}"
+    frontAndSmall="$frontEndText$small"
+    lenFrontAndSmall="${#frontAndSmall}"
+
+    lenBack="$(( lenBig - lenFrontAndSmall ))"
+    backEndStart="$(( lenBig - lenBack ))"
+    backEndText="${big:$backEndStart}"
+    result="$frontEndText$small$backEndText"
+    #listVarsLong stringA stringB big small delta frontEndText backEndText lenFront lenBack backEndStart frontAndSmall result lenBig lenSmall lenFrontAndSmall
+    echo "$result"
+}
+# ↑↑↑ END centerStringInString
+# ↓↓↓ def middlePadStrings()
+middlePadStrings() {
+    local _DOCSTRING="Pads the middle of two strings with the given character to the given length."
+    local _USAGE="Usage: middlePadStrings<leftString> <rightString> <length> [padCharacter=<SPACE>]"
+    functionTracingDebug "$@"
+
+    local  padCharacter length leftString rightString returnValue lenLeft lenRight rPl
+    minimumArguments 3 "$@" || return 3
+    leftString="$1"
+    rightString="$2"
+    length="$3"
+    padCharacter="${4:- }"
+
+    local padWidth padding padString
+
+    padCharacter="${padCharacter:0:1}" # Get only the first character given.
+
+    lenLeft="${#leftString}"
+    lenRight="${#rightString}"
+    rPl="$(( lenRight + lenLeft ))"
+    padWidth="$(( length - rPl ))"
+    padString="$(repeatString "$padCharacter" "$padWidth")"
+    returnValue="$leftString$padString$rightString"
+    echo "$returnValue"
+}
+# ↑↑↑ END middlePadStrings
+# ↓↓↓ def rightJustify()
+rightJustify() {
+    local _DOCSTRING="Justify text on the right of [width], or the screen."
+    local _USAGE="Usage: rightJustify <string> [width]"
+    functionTracingDebug "$@"
+
+    local  string width
+    minimumArguments 1 "$@" || return 3
+    string="$1"
+    width="${2:-$COLUMNS}"
+    padCharacter="${3:- }"
+    padCharacter="${padCharacter:0:1}" # Get only the first character given.
+
+    middlePadStrings '' "$string" "$width" "$padCharacter"
+}
+# ↑↑↑ END rightJustify
+# ↓↓↓ def indentIt()
+indentIt() {
+    local _DOCSTRING="Indents each input line by N * '    ' (4 spaces)."
+    local _USAGE="Usage: indentIt <n>"
+    functionTracingDebug "$@"
+
+    local  n
+    minimumArguments 1 "$@" || return 3
+    n="$1"
+
+    local indentation
+
+    indentation="$(repeatString '    ' "$n")"
+
+    while read line
+    do
+        #echo "awesome$indentation$line"
+        echo "$line"
+    done
+}
+# ↑↑↑ END indentIt
+
 # Paths: manipulation
 # ↓↓↓ def basename()
 basename() {
@@ -348,6 +569,24 @@ findAudioPlayer() {
     raiseError 1 "No audio player found."
 }
 # ↑↑↑ END findAudioPlayer
+# ↓↓↓ def setSyntaxHighlighter()
+setSyntaxHighlighter() {
+    local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
+    local _USAGE="Usage: setSyntaxHighlighter "
+    functionTracingDebug "$@"
+
+    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
+        if [[ -x "$(which pygmentize)" ]]; then
+            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
+            return 0
+        else
+            _SYNTAX_HIGHLIGHTER="$(which cat)"
+            return 1
+        fi
+    fi
+}
+# ↑↑↑ END setSyntaxHighlighter
+
 # ↓↓↓ def weAreRunningX()
 weAreRunningX() {
     ## Check if we are running an X11 server. Return true if we are and false if not.
@@ -401,8 +640,244 @@ vars() {
     declare -p | grep '^declare -[-aAx] '
 }
 # ↑↑↑ END vars
-# ↓↓↓ def describe()                  # This is a very handy function.
-describe() {
+# ↓↓↓ def listVars()
+listVars() {
+    local _DOCSTRING="Pretty print the name and value of each variable name supplied in a single line."
+    local _USAGE="Usage: listVars names of vars"
+    functionTracingDebug "$@"
+
+    local varName indent
+
+    while [[ "$1" =~ ^--.*= ]]
+    do
+        case "$1" in
+            --indent)
+                indent="${1##*=}"
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    echo -n "$indent    "
+    for varName in "$@"
+    do
+        declare -n nameRefToVar=$varName
+        echo -n "$dodgerBlue$varName$normal --> $purple$nameRefToVar$normal;  "
+    done
+    echo
+}
+# ↑↑↑ END listVars
+# ↓↓↓ def listVarsLong()
+listVarsLong() {
+    local _DOCSTRING="Pretty print the name and value of each variable name supplied."
+    local _USAGE="Usage: listVars names of vars"
+    functionTracingDebug "$@"
+
+    local varName indent
+
+    while [[ "$1" =~ ^--.*= ]]
+    do
+        case "$1" in
+            --indent)
+                indent="${1##*=}"
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    echo
+    { for varName in "$@"
+    do
+        declare -n nameRefToVar=$varName
+        echo "$indent    $dodgerBlue$varName$normal |--> $purple$nameRefToVar$normal"
+    done; } | column -s'|' -t
+}
+# ↑↑↑ END listVars
+### What is it?
+# ↓↓↓ def isVar()
+isVar() {
+    local _DOCSTRING="Returns true/false if arg is/not a variable."
+    local _USAGE="Usage: isVar <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist
+
+    declare -p | grep 'declare -[-x]' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isVar
+# ↓↓↓ def isAlias()
+isAlias() {
+    local _DOCSTRING="Returns true/false if arg is/not an alias."
+    local _USAGE="Usage: isAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    alias | cut -d' ' -f 2 | cut -d= -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAlias
+# ↓↓↓ def isArray()
+isArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    arrays | cut -d' ' -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isArray
+# ↓↓↓ def isAssociativeArray()
+isAssociativeArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an associative array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -p | grep 'declare -A' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAssociativeArray
+# ↓↓↓ def isIndexedArray()
+isIndexedArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an indexed array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -p | grep 'declare -a' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isIndexedArray
+# ↓↓↓ def isFunction()
+isFunction() {
+    local _DOCSTRING="Returns true/false if arg is/not a function."
+    local _USAGE="Usage: isFunction <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -F | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isFunction
+# ↓↓↓ def isExecutable()
+isExecutable() {
+    local _DOCSTRING="Returns true/false if arg is/not an executable on the PATH."
+    local _USAGE="Usage: isExecutable arg"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    which "$arg" >/dev/null 2>/dev/null
+}
+# ↑↑↑ END isExecutable
+# ↓↓↓ def isBuiltin()
+isBuiltin() {
+    local _DOCSTRING="Returns true/false if arg is/not a shell builtin."
+    local _USAGE="Usage: isBuiltin <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    help "$arg" >/dev/null 2>/dev/null
+}
+# ↑↑↑ END isBuiltin
+
+
+### Describe it
+# ↓↓↓ def describeVar()
+describeIndexedArray() {
+    local _DOCSTRING="Returns the definition of the variable."
+    local _USAGE="Usage: describeVar <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${green}Variable${normal}:"
+    listVars "$arg"
+}
+# ↑↑↑ END describeVar
+# ↓↓↓ def describeIndexedArray()
+describeIndexedArray() {
+    local _DOCSTRING="Returns the definition of the indexed array."
+    local _USAGE="Usage: describeIndexedArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${green}Indexed array${normal}:"
+    array "$arg" | indentIt 1
+}
+# ↑↑↑ END describeIndexedArray
+# ↓↓↓ def describeAssociativeArray()
+describeAssociativeArray() {
+    local _DOCSTRING="Returns the definition of the indexed array."
+    local _USAGE="Usage: describeAssociativeArray<arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${green}Associative array${normal}:"
+    array "$arg" | indentIt 1
+}
+# ↑↑↑ END describeAssociativeArray
+# ↓↓↓ def describeAlias()
+describeAlias() {
+    local _DOCSTRING="Returns the definition of the alias."
+    local _USAGE="Usage: describeAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local aliasDef 
+
+    if ! isAlias "$arg"; then
+        return 1
+    fi
+
+    setSyntaxHighlighter
+
+    aliasDef="$(alias "$arg" | cut -d= -f2-)"
+
+    echo "${green}Alias$normal:"
+    echo -n "    $arg = "
+    echo "$aliasDef" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
+}
+# ↑↑↑ END describeAlias
+# ↓↓↓ def describeFunction()                  # This is a very handy function.
+describeFunction() {
     local _DOCSTRING="Prints the source code for a defined function. Usage: describe <function>"
     functionTracingDebug "$@"
     case "$1" in
@@ -425,20 +900,36 @@ describe() {
     echo "${green}Definition:$normal"
     } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
     $extdebugSave # Set it back to what it was before.
-    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
-        if [[ -x "$(which pygmentize)" ]]; then
-            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
-        else
-            _SYNTAX_HIGHLIGHTER="$(which cat)"
-        fi
-    fi
+
+    setSyntaxHighlighter
 
     declare -f "$func" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
 }
 complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
-# ↑↑↑ END describe
-# ↓↓↓ def _describeExtended()         # This is a work in progress.
-_describeExtended() {
+# ↑↑↑ END describeFunction
+# ↓↓↓ def describeExecutable()
+describeExecutable() {
+    local _DOCSTRING="Returns the definition of the alias."
+    local _USAGE="Usage: describeAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local location 
+
+    if ! isExecutable "$arg"; then
+        return 1
+    fi
+
+    echo "${green}Executable on PATH$normal:"
+    echo -n "    $arg = "
+    echo "$(which "$arg")" | indentIt 1
+}
+# ↑↑↑ END describeExecutable
+# ↓↓↓ def describe()
+describe() {
     local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
     functionTracingDebug "$@"
     case "$1" in
@@ -450,29 +941,21 @@ _describeExtended() {
             ;;
     esac
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
-    local func extdebugSave lineNumber sourceFileName
-    func="$1"
+    local arg path
+    arg="$1"
     extdebugSave="$(shopt -p extdebug)"
 
-    shopt -s extdebug
-    declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
-    echo "${green}Source:$normal $sourceFileName"
-    echo "${green}Line number:$normal $lineNumber"
-    echo "${green}Definition:$normal"
-    } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
-    $extdebugSave # Set it back to what it was before.
-    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
-        if [[ -x "$(which pygmentize)" ]]; then
-            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
-        else
-            _SYNTAX_HIGHLIGHTER="$(which cat)"
-        fi
-    fi
-
-    declare -f "$func" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
+    {
+        isVar              "$arg" && describeVar              "$arg"
+        isAssociativeArray "$arg" && describeAssociativeArray "$arg"
+        isIndexedArray     "$arg" && describeIndexedArray     "$arg"
+        isFunction         "$arg" && describeFunction         "$arg"
+        isExecutable       "$arg" && describeExecutable       "$arg"
+    } || return 1
+    return 0
 }
 complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
-# ↑↑↑ END _describeExtended
+# ↑↑↑ END describe
 
 # Function aids & interrogation
 # ↓↓↓ def listArgs()
@@ -725,10 +1208,11 @@ btrfsSubvolCreationTimeEpoc() {
     local timestamp epocTime 
 
     if ! isSubvolume "$path"; then
-        dbfail "$path is not a BTRFS subvolume"; return 1
+        dbFail "$path is not a BTRFS subvolume"; return 1
     fi
-    timestamp="$(sudo btrfs subvolume show "$path" | grep 'Creation time' | tr -s ' ' | cut -d' ' -f3-4)" # Scrape the creation timestamp from btrfs's show subcomand.
-    timestamp="2${timestamp##*2}" # Kill leading whitespace.
+    timestamp="$(sudo btrfs subvolume show "$path" | grep 'Creation time' | tr '\t' ' ')"
+    timestamp="${timestamp:18:19}" # Just rely on the format of the output... I'm sure this is a terible idea...
+    
     epocTime="$(date -d "$timestamp" '+%s')" # Convert time to seconds since 01/01/1970.
     echo "$epocTime"
 }
@@ -765,4 +1249,50 @@ oldestSnapshotInDir() {
     echo "$justTheFilename"
 }
 # ↑↑↑ END oldestFileInDir
+
+# DATE LOGIC
+# ↓↓↓ def listDaysOfMonth()
+listDaysOfMonth() {
+    local _DOCSTRING="Returns a string of numerical days of the month provided, i.e., \"01 02 ... 30 31\""
+    local _USAGE="Usage: listTheDaysOfTheMonth <month> [year]"
+    functionTracingDebug "$@"
+
+    local  month year
+    minimumArguments 1 "$@" || return 3
+    month="$1"
+    year="${2-$(date '+%Y')}" # defaults to current year.
+
+    local month domSet thisYear nextYear
+
+    thisYear="$year"
+    nextYear="$(( year + 1 ))"
+
+    case "$month" in
+        # 31-day Months
+        #     JAN MAR MAY JUL AUG OCT DEC
+        01|03|05|07|08|10|12)
+            domSet="$(echo {01..31})"
+            ;;
+        # 30-day Months
+        #     APR JUN SEP NOV
+        04|06|09|11)
+            domSet="$(echo {01..30})"
+            ;;
+        # February check.
+        #  Is leap-year -- YEAR %% 4
+        02)
+            if [[ $(( year % 4 )) == 0 ]]; then # It's a leep year.
+                # 0 -- 29 days
+                domSet="$(echo {01..29})"
+            else
+                # non-0 -- 28 days
+                domSet="$(echo {01..28})"
+            fi
+            ;;
+        *)
+            dbFail "Month is $month. Needs to be 0 < month < 13." ; return 1
+    esac
+    echo "$domSet"
+}
+# ↑↑↑ END listDaysOfMonth
 

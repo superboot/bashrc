@@ -1,5 +1,4 @@
 # ARRAY INTROSPECTION
-# These are helper functions that show arrays. 
 # ↓↓↓ def __arrayNames()  -- Supporting function
 __arrayNames() {
     # "returns" (via standard output) the list of current array names, both indexed and associative, one per line.
@@ -63,7 +62,7 @@ array() {
     if [[ $# -gt 0 ]]; then # We have arguments
         for candidate in "$@" # For each argument.
         do
-            candidate="$(echo "$candidate" | sed 's/[^a-zA-Z0-9_]/ /g')" # Remove all non alpha-numeric-unerbar characters.
+            candidate="$(echo "$candidate" | sed 's/[^a-zA-Z0-9_]/ /g')" # Remove all non alpha-numeric-underbar characters.
             if existingArrayName "$candidate"; then # If the candidate is the name of an existing array.
                 __printArrayDetails $reverse "$candidate" # $reverse has no quotes so it will expand to nothing if it is empty.
             fi
@@ -149,13 +148,59 @@ maxKeyLength() {
     return 1 # We didn't get the name of a real array.
 }
 # ↑↑↑ END maxKeyLength
+# Array operations
+# ↓↓↓ def pop()
+pop() {
+    local _DOCSTRING="Removes and returns the right most element of the given array. Side effect of collapsing any voids in the array."
+    local _USAGE="Usage: pop <arrayName>"
+    functionTracingDebug "$@"
+
+    local  arrayName
+    minimumArguments 1 "$@" || return 3
+    arrayName=$1
+
+    local namedArray popFromThis returnValue
+
+    declare -n namedArray="$arrayName"
+
+    popFromThis=("${namedArray[@]}") # Collapse voids and re-zeroth.
+
+    returnValue="${popFromThis[-1]}" # Save the right most element.
+    unset popFromThis[-1] # Remove the right most element
+    namedArray=("${popFromThis[@]}") # Overwrite the namedArray with the conents of popFromThis array.
+
+    echo "$returnValue"
+}
+# ↑↑↑ END pop
+# ↓↓↓ def lpop()
+lpop() {
+    local _DOCSTRING="Removes and returns the left most element of the named array."
+    local _USAGE="Usage: lpop <arrayName>"
+    functionTracingDebug "$@"
+
+    local  arrayName
+    minimumArguments 1 "$@" || return 3
+    arrayName=$1
+
+    local namedArray popFromThis returnValue
+
+    declare -n namedArray="$arrayName"
+    popFromThis=("${namedArray[@]}") # Collapses the array, removing any "holes" in the index.
+
+    returnValue="${popFromThis[0]}"
+    # db "Warning: lpop rebuilds the array on top of itself. This will collapse any voids in the given array, and re-zeroth the array." 
+    namedArray=("${namedArray[@]:2}") # Overwrite the original array with all the same values, but for the left most.
+
+    _lpopReturn="$returnValue" # Pick up this value.
+}
+# ↑↑↑ END lpop
 
 
 # Stack
 declare -a _STACK # The default stack array.
 _DEFSTACK="_STACK" # The variable to track the default stack.
-# ↓↓↓ def push()
-push() {
+# ↓↓↓ def spush()
+spush() {
     local _DOCSTRING="Push a value onto the stack."
     local _USAGE="Usage: push <val>"
     functionTracingDebug "$@"
@@ -168,8 +213,8 @@ push() {
     namerefToStk+=("$val")
 }
 # ↑↑↑ END push
-# ↓↓↓ def pop()
-pop() {
+# ↓↓↓ def spop()
+spop() {
     local _DOCSTRING="Pop the last item from the _STACK, removing it from the array and returning it."
     local _USAGE="Usage: pop "
     functionTracingDebug "$@"
