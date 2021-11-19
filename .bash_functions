@@ -8,8 +8,8 @@ pbg () { curl -s "$1" ; }
 # ↑↑↑ END PASTE BIN SPRUNGE
 # ↓↓↓ GPG SYMETRIC 
 # gpg shorts:
-es () { gpg -o - -a -c ; }
-d () { gpg -o - -d ; } 
+#es () { gpg -o - -a -c ; }
+#d () { gpg -o - -d ; } 
 # ↑↑↑ END GPG SYMETRIC 
 # ↓↓↓ GREPALL (GREP ALL)
 # This will grep all files in directoy recursivly for term.

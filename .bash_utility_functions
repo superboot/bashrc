@@ -533,10 +533,9 @@ indentIt() {
 
     indentation="$(repeatString '    ' "$n")"
 
-    while read line
+    cat | while IFS='' read line
     do
-        #echo "awesome$indentation$line"
-        echo "$line"
+        echo "$indentation$line"
     done
 }
 # ↑↑↑ END indentIt
@@ -715,19 +714,6 @@ isVar() {
     declare -p | grep 'declare -[-x]' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isVar
-# ↓↓↓ def isAlias()
-isAlias() {
-    local _DOCSTRING="Returns true/false if arg is/not an alias."
-    local _USAGE="Usage: isAlias <arg>"
-    functionTracingDebug "$@"
-
-    local  arg
-    minimumArguments 1 "$@" || return 3
-    arg="$1"
-
-    alias | cut -d' ' -f 2 | cut -d= -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
-}
-# ↑↑↑ END isAlias
 # ↓↓↓ def isArray()
 isArray() {
     local _DOCSTRING="Returns true/false if arg is/not an array."
@@ -741,19 +727,6 @@ isArray() {
     arrays | cut -d' ' -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isArray
-# ↓↓↓ def isAssociativeArray()
-isAssociativeArray() {
-    local _DOCSTRING="Returns true/false if arg is/not an associative array."
-    local _USAGE="Usage: isArray <arg>"
-    functionTracingDebug "$@"
-
-    local  arg
-    minimumArguments 1 "$@" || return 3
-    arg="$1"
-
-    declare -p | grep 'declare -A' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
-}
-# ↑↑↑ END isAssociativeArray
 # ↓↓↓ def isIndexedArray()
 isIndexedArray() {
     local _DOCSTRING="Returns true/false if arg is/not an indexed array."
@@ -767,6 +740,32 @@ isIndexedArray() {
     declare -p | grep 'declare -a' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isIndexedArray
+# ↓↓↓ def isAssociativeArray()
+isAssociativeArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an associative array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -p | grep 'declare -A' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAssociativeArray
+# ↓↓↓ def isAlias()
+isAlias() {
+    local _DOCSTRING="Returns true/false if arg is/not an alias."
+    local _USAGE="Usage: isAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    alias | cut -d' ' -f 2 | cut -d= -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAlias
 # ↓↓↓ def isFunction()
 isFunction() {
     local _DOCSTRING="Returns true/false if arg is/not a function."
@@ -803,14 +802,22 @@ isBuiltin() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    help "$arg" >/dev/null 2>/dev/null
+    local allBuiltins builtin
+
+    allBuiltins="$(help | tail -n38 | while read line; do echo "${line%% *}"; done; help | tail -n38 | while read line; do x="${line##*  }"; echo "${x%% *}"; done)"
+
+    for builtin in $allBuiltins
+    do
+        if [[ "$arg" == "$builtin" ]]; then
+            return 0 # Success!
+        fi
+    done
+    return 1 # We didn't find a match
 }
 # ↑↑↑ END isBuiltin
-
-
 ### Describe it
 # ↓↓↓ def describeVar()
-describeIndexedArray() {
+describeVar() {
     local _DOCSTRING="Returns the definition of the variable."
     local _USAGE="Usage: describeVar <arg>"
     functionTracingDebug "$@"
@@ -819,8 +826,8 @@ describeIndexedArray() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    echo "${green}Variable${normal}:"
-    listVars "$arg"
+    echo "${taxexYellow}Variable${normal}:"
+    listVarsLong "$arg"
 }
 # ↑↑↑ END describeVar
 # ↓↓↓ def describeIndexedArray()
@@ -833,7 +840,7 @@ describeIndexedArray() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    echo "${green}Indexed array${normal}:"
+    echo "${dodgerBlue}Indexed array${normal}:"
     array "$arg" | indentIt 1
 }
 # ↑↑↑ END describeIndexedArray
@@ -847,7 +854,7 @@ describeAssociativeArray() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    echo "${green}Associative array${normal}:"
+    echo "${red}Associative array${normal}:"
     array "$arg" | indentIt 1
 }
 # ↑↑↑ END describeAssociativeArray
@@ -871,7 +878,7 @@ describeAlias() {
 
     aliasDef="$(alias "$arg" | cut -d= -f2-)"
 
-    echo "${green}Alias$normal:"
+    echo "${purple}Alias$normal:"
     echo -n "    $arg = "
     echo "$aliasDef" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
 }
@@ -894,38 +901,77 @@ describeFunction() {
     extdebugSave="$(shopt -p extdebug)"
 
     shopt -s extdebug
+    echo "${liabilityPink}Function$normal:"
     declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
-    echo "${green}Source:$normal $sourceFileName"
-    echo "${green}Line number:$normal $lineNumber"
-    echo "${green}Definition:$normal"
+    echo "    ${green}Source:$normal $sourceFileName"
+    echo "    ${green}Line number:$normal $lineNumber"
     } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
     $extdebugSave # Set it back to what it was before.
 
     setSyntaxHighlighter
 
-    declare -f "$func" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
+    declare -f "$func" | $_SYNTAX_HIGHLIGHTER | indentIt 1  # Print out the function definition.
 }
 complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
 # ↑↑↑ END describeFunction
-# ↓↓↓ def describeExecutable()
-describeExecutable() {
-    local _DOCSTRING="Returns the definition of the alias."
-    local _USAGE="Usage: describeAlias <arg>"
+# ↓↓↓ def describeBuiltin()
+describeBuiltin() {
+    local _DOCSTRING="Docstring"
+    local _USAGE="Usage: describeBuiltin <arg>"
     functionTracingDebug "$@"
 
     local  arg
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    local location 
+    isBuiltin "$arg" || return 1
+
+    local description 
+
+    description="$(help "$arg" | head -n2 | tail -n1)"
+
+    echo "${warmOrange}Built-in$normal:"
+    echo "    $arg: $description"
+}
+# ↑↑↑ END describeBuiltin
+# ↓↓↓ def describeExecutable()
+describeExecutable() {
+    local _DOCSTRING="Returns the definition of the alias."
+    local _USAGE="Usage: describeExecutable <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local location parentPackage symlinkResolutionPath
 
     if ! isExecutable "$arg"; then
         return 1
     fi
 
+    location="$(which "$arg")"
+
+    if [[ -L "$location" ]]; then
+        symlinkResolutionPath+="$cyan$location$normal"
+        while [[ -L "$location" ]]  
+        do
+            location="$(readlink "$location")"
+            symlinkResolutionPath+=" --> $cyan$location$normal"
+        done
+    fi
+
+    parentPackage="$(dlocate "$location" | head -n1 | cut -d':' -f1)"
+
     echo "${green}Executable on PATH$normal:"
-    echo -n "    $arg = "
-    echo "$(which "$arg")" | indentIt 1
+    echo "    $arg:"
+    { 
+        echo "Path:|$location"
+        echo "Parent package:|$parentPackage"
+        if [[ "$symlinkResolutionPath" != '' ]]; then
+            echo "Resolution:|$symlinkResolutionPath"
+        fi
+        :; } | column -t -s'|' | indentIt 2
 }
 # ↑↑↑ END describeExecutable
 # ↓↓↓ def describe()
@@ -935,27 +981,53 @@ describe() {
     case "$1" in
         --help | -h)
             echo
-            echo $_DOCSTRING
+            echo -e "$_DOCSTRING"
             echo
             return
             ;;
     esac
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
-    local arg path
+    local arg 
     arg="$1"
-    extdebugSave="$(shopt -p extdebug)"
 
-    {
-        isVar              "$arg" && describeVar              "$arg"
-        isAssociativeArray "$arg" && describeAssociativeArray "$arg"
-        isIndexedArray     "$arg" && describeIndexedArray     "$arg"
-        isFunction         "$arg" && describeFunction         "$arg"
-        isExecutable       "$arg" && describeExecutable       "$arg"
-    } || return 1
+    if [[ "${FUNCNAME[1]}" != 'describe' ]]; then # If we were not called by ourselves
+        set -o pipefail
+        describe "$@" | less -FiXWR # Send to the pager, preserving colors, and exiting the pager if there is less than a page.
+        local rv=$?
+        set +o pipefail
+        return "$rv"
+    fi
+
+    local returnTrue header separator type keepGoing
+
+    header='================='
+    separator='================='
+
+    :<<'    GARBAGE'
+    for type in Var IndexedArray AssociativeArray Alias Function Builtin Executable
+    do
+        is$type "$arg" && keepGoing=yes
+    done
+    if [[ "$keepGoing" != yes ]]; then return 1; fi
+    echo "$header"
+    GARBAGE
+
+    # If we have a valid arg, print the header.
+    { isVar "$arg" || isIndexedArray "$arg" || isAssociativeArray "$arg" || isAlias "$arg" || isFunction "$arg" || isBuiltin "$arg" || isExecutable "$arg"; } && echo "$header" || return 1
+
+    isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
+    isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
+    isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
+    isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
+    isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
+    isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
+    isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
+
     return 0
 }
 complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
 # ↑↑↑ END describe
+alias d=describe # <---- SETS UP AN ALIAS.
 
 # Function aids & interrogation
 # ↓↓↓ def listArgs()
