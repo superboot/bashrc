@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # ↓↓↓ def showVars()
 showVars() {
     ## Print an easy to read list of key-value pairs, with values truncatedfor screen width.
@@ -56,3 +54,4 @@ truncateVal() {
 
 
 
+_importsArray[env_functions]="$(( ${_imports[env_functions]} + 1 ))"

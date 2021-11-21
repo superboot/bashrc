@@ -58,3 +58,4 @@ weAreInBDB() {
 }
 # ↑↑↑ END weAreInBDB
 
+_importsArray[repl]="$(( ${_imports[repl]} + 1 ))"

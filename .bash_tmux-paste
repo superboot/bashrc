@@ -4,3 +4,4 @@ bind -r '"\ev"'
 bind -x '"\ev":tmuxPaste'
 bind -r '"\ec"'
 bind -x '"\ec":tmuxCopyMode'
+_importsArray[tmux-paste]="$(( ${_imports[tmux-paste]} + 1 ))"

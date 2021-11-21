@@ -903,8 +903,8 @@ describeFunction() {
     shopt -s extdebug
     echo "${liabilityPink}Function${normal}:"
     declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
-    echo "    ${green}Source:$normal $sourceFileName"
-    echo "    ${green}Line number:$normal $lineNumber"
+    echo "    ${green}Source:${normal} $sourceFileName"
+    echo "    ${green}Line number:${normal} $lineNumber"
     } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
     $extdebugSave # Set it back to what it was before.
 
@@ -930,7 +930,7 @@ describeBuiltin() {
 
     description="$(help "$arg" | head -n2 | tail -n1)"
 
-    echo "${warmOrange}Built-in$normal:"
+    echo "${warmOrange}Built-in${normal}:"
     echo "    $arg: $description"
 }
 # ↑↑↑ END describeBuiltin
@@ -953,17 +953,17 @@ describeExecutable() {
     location="$(which "$arg")"
 
     if [[ -L "$location" ]]; then
-        symlinkResolutionPath+="$cyan$location$normal"
+        symlinkResolutionPath+="${cyan}$location${normal}"
         while [[ -L "$location" ]]  
         do
             location="$(readlink "$location")"
-            symlinkResolutionPath+=" --> $cyan$location$normal"
+            symlinkResolutionPath+=" --> ${cyan}$location${normal}"
         done
     fi
 
     parentPackage="$(dlocate "$location" | head -n1 | cut -d':' -f1)"
 
-    echo "${green}Executable on PATH$normal:"
+    echo "${green}Executable on PATH${normal}:"
     echo "    $arg:"
     { 
         echo "Path:|$location"
@@ -992,15 +992,16 @@ describe() {
 
     if [[ "${FUNCNAME[1]}" != 'describe' ]]; then # If we were not called by ourselves
         set -o pipefail
-        describe "$@" | less -FiXWR # Send to the pager, preserving colors, and exiting the pager if there is less than a page.
+        describe "$@" | less -FiXWr # Send to the pager, preserving colors, and exiting the pager if there is less than a page.
         local rv=$?
         set +o pipefail
         return "$rv"
     fi
 
+
     local returnTrue header separator type keepGoing 
 
-    # local normal="$(tput setaf 231)"
+    #local normal="$(tput setaf 230)"
 
     header='================='
     separator='================='
@@ -1370,3 +1371,7 @@ listDaysOfMonth() {
 }
 # ↑↑↑ END listDaysOfMonth
 
+_importsArray[utility_functions]="$(( ${_imports[utility_functions]} + 1 ))"
+
+
+_importsArray[utility_functions]="$(( ${_imports[utility_functions]} + 1 ))"

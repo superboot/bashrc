@@ -486,3 +486,4 @@ bind -x '"\eP":cdStackPrintStackLong' # Bind Alt-p to print the stack.
 cdStackAppend "$PWD"
 
 MARKS_readMarksFile # Read the marks file into the environment.
+_importsArray[mark-system]="$(( ${_imports[mark-system]} + 1 ))"

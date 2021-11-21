@@ -125,3 +125,4 @@ alias gs='git status'
 #alias gc='git commit -m' # Converted to a function.
 alias ga='git add'
 alias gl='git log'
+_importsArray[aliases]="$(( ${_imports[aliases]} + 1 ))"

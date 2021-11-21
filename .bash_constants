@@ -1,2 +1,3 @@
 #!/bin/bash
 moduleDocstring="This script is a list of constants that are useful."
+_importsArray[constants]="$(( ${_imports[constants]} + 1 ))"

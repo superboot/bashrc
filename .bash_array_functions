@@ -74,6 +74,7 @@ array() {
         done < <(__arrayNames) # Run the __arrayNames function in a subshell and feed it's output as though it were a file into the read loop.
     fi
 }
+complete -A arrayvar array # Enable tab-completion of array names for the array() function.
 # ↑↑↑ END array
 # ↓↓↓ def arrays()
 arrays() {
@@ -279,3 +280,4 @@ stacks() {
     done
 }
 # ↑↑↑ END stacks
+_importsArray[array_functions]="$(( ${_imports[array_functions]} + 1 ))"

@@ -12,3 +12,4 @@ gc() {
 }
 # ↑↑↑ END gc
 
+_importsArray[git-helper-functions]="$(( ${_imports[git-helper-functions]} + 1 ))"
