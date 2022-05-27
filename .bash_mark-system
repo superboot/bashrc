@@ -37,7 +37,7 @@ export CD_ARROW='--> ' # Used in report formatting
 export CD_HEADLINES=5  # Used in report formatting
 export CD_TAILLINES=5  # Used in report formatting
 export CD_LONGPRINTADJUSTMENT=4 # Used in report formatting. Set to 2 + number-of-prompt-lines.
-export MARKS_FILE="$HOME/.bash_persistent_marks"
+export MARKS_FILE="$HOME/.bash/.bash_persistent_marks"
 
 declare -A marks # Set the mark associative array for mapping bookmark names to paths.
 
@@ -486,4 +486,4 @@ bind -x '"\eP":cdStackPrintStackLong' # Bind Alt-p to print the stack.
 cdStackAppend "$PWD"
 
 MARKS_readMarksFile # Read the marks file into the environment.
-_importsArray[mark-system]="$(( ${_imports[mark-system]} + 1 ))"
+_importsArray[mark-system]="$(( ${_importsArray[mark-system]} + 1 ))"

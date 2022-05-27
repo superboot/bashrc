@@ -100,7 +100,6 @@ alias pdfedit='masterpdfeditor3'
 alias dis='disown'
 
 alias dt='downtime-v0.2.py'
-alias tree="tree -C | less -R"
 
 alias venv='source ~/.mypython/bin/activate'
 
@@ -125,4 +124,4 @@ alias gs='git status'
 #alias gc='git commit -m' # Converted to a function.
 alias ga='git add'
 alias gl='git log'
-_importsArray[aliases]="$(( ${_imports[aliases]} + 1 ))"
+_importsArray[aliases]="$(( ${_importsArray[aliases]} + 1 ))"

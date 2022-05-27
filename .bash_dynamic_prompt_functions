@@ -74,4 +74,4 @@ generateExitStatus() {
 }
 # ↑↑↑ END generateExitStatus
 
-_importsArray[dynamic_prompt_functions]="$(( ${_imports[dynamic_prompt_functions]} + 1 ))"
+_importsArray[dynamic_prompt_functions]="$(( ${_importsArray[dynamic_prompt_functions]} + 1 ))"

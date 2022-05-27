@@ -69,4 +69,4 @@ cd()
         return $?
     fi
 }
-_importsArray[cd]="$(( ${_imports[cd]} + 1 ))"
+_importsArray[cd]="$(( ${_importsArray[cd]} + 1 ))"

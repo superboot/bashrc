@@ -280,4 +280,4 @@ stacks() {
     done
 }
 # ↑↑↑ END stacks
-_importsArray[array_functions]="$(( ${_imports[array_functions]} + 1 ))"
+_importsArray[array_functions]="$(( ${_importsArray[array_functions]} + 1 ))"

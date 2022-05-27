@@ -1,2 +1,2 @@
 complete -c sourcecode # Complete command names for the $HOME/bin/sourcecode script.
-_importsArray[completions]="$(( ${_imports[completions]} + 1 ))"
+_importsArray[completions]="$(( ${_importsArray[completions]} + 1 ))"

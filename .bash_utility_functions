@@ -15,7 +15,7 @@ export _functraceLog="$HOME/.log/functrace.log"
 # Debugging & Program info
 # ↓↓↓ def db()
 db() {
-    local _DOCSTRING="Log a debug message. Takes optional alternate logfile as 2nd arg."
+    local _DOCSTRING="Log a debug message. Takes optional alternate logfile as 1st arg."
     local _USAGE="Usage: db [_log=/alternate/logfile] <message>"
 
     local  message logfile caller
@@ -714,6 +714,41 @@ isVar() {
     declare -p | grep 'declare -[-x]' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isVar
+# ↓↓↓ def isAscii()
+isAscii() {
+    local _DOCSTRING="Returns true/false if arg is/not a ASCII text."
+    local _USAGE="Usage: isAscii <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist filetype
+
+    file "$arg" | grep 'ASCII text' >/dev/null 2>/dev/null && return 0 
+    return 1
+    
+}
+# ↑↑↑ END isVar
+# ↓↓↓ def isScript()
+isScript() {
+    local _DOCSTRING="Returns true/false if arg is/not a script."
+    local _USAGE="Usage: isScript <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist filetype
+
+    # Pull out the first field after the file name, and see if it contains "script".
+    file "$arg" | cut -d':' -f2 | cut -d',' -f1 | grep 'script' >/dev/null 2>/dev/null && return 0 
+    return 1
+    
+}
+# ↑↑↑ END isVar
 # ↓↓↓ def isArray()
 isArray() {
     local _DOCSTRING="Returns true/false if arg is/not an array."
@@ -936,7 +971,7 @@ describeBuiltin() {
 # ↑↑↑ END describeBuiltin
 # ↓↓↓ def describeExecutable()
 describeExecutable() {
-    local _DOCSTRING="Returns the definition of the alias."
+    local _DOCSTRING="Returns information about the executable."
     local _USAGE="Usage: describeExecutable <arg>"
     functionTracingDebug "$@"
 
@@ -944,34 +979,52 @@ describeExecutable() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    local location parentPackage symlinkResolutionPath
+    local location parentPackage symlinkResolutionPath linecount filetype
 
+    # Sanity check
     if ! isExecutable "$arg"; then
         return 1
     fi
 
+    # Location
     location="$(which "$arg")"
 
+    # Derefference symlinks
     if [[ -L "$location" ]]; then
         symlinkResolutionPath+="${cyan}$location${normal}"
         while [[ -L "$location" ]]  
         do
-            location="$(readlink "$location")"
+            location="$(readlink -f "$location")"
             symlinkResolutionPath+=" --> ${cyan}$location${normal}"
         done
     fi
 
+    # Parent package
     parentPackage="$(dlocate "$location" | head -n1 | cut -d':' -f1)"
 
+    # Filetype
+    filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
+    filetype="$(echo "$filetype" | sed 's/^ *//g')" $ # Get rid of leading spaces.
+
+    # Linecount
+    if isScript "$location"; then # Check if it is a script
+        linecount="$(wc -l "$location" | cut -d' ' -f1)"
+    fi
+
+    # Display
     echo "${green}Executable on PATH${normal}:"
     echo "    $arg:"
     { 
         echo "Path:|$location"
-        echo "Parent package:|$parentPackage"
+        echo "Type:|$filetype"
         if [[ "$symlinkResolutionPath" != '' ]]; then
             echo "Resolution:|$symlinkResolutionPath"
         fi
-        :; } | column -t -s'|' | indentIt 2
+        if [[ "$linecount" != '' ]]; then
+            echo "Lines:|$linecount"
+        fi
+        echo "Parent package:|$parentPackage"
+    :; } | column -t -s'|' | indentIt 2
 }
 # ↑↑↑ END describeExecutable
 # ↓↓↓ def describe()
@@ -1133,7 +1186,7 @@ latestFileInDir() {
     functionTracingDebug "$@"
 
     local  dir 
-    minimumArguments 0 "$@" || return 3 # Quits the entire script if there are not enough arguments.
+    minimumArguments 0 "$@" || return 3 
     dir=${1:-.}
 
     local file latest justTheFilename
@@ -1371,7 +1424,4 @@ listDaysOfMonth() {
 }
 # ↑↑↑ END listDaysOfMonth
 
-_importsArray[utility_functions]="$(( ${_imports[utility_functions]} + 1 ))"
-
-
-_importsArray[utility_functions]="$(( ${_imports[utility_functions]} + 1 ))"
+_importsArray[utility_functions]="$(( ${_importsArray[utility_functions]} + 1 ))"

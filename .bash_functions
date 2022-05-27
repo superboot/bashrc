@@ -72,4 +72,4 @@ latestFileInDir() {
     printf '%s\n' "$latest" 
 }
 # ↑↑↑ END latestFile
-_importsArray[functions]="$(( ${_imports[functions]} + 1 ))"
+_importsArray[functions]="$(( ${_importsArray[functions]} + 1 ))"
