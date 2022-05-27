@@ -1004,7 +1004,7 @@ describeExecutable() {
 
     # Filetype
     filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
-    filetype="$(echo "$filetype" | sed 's/^ *//g')" $ # Get rid of leading spaces.
+    filetype="$(echo "$filetype" | sed 's/^ *//g')" # Get rid of leading spaces.
 
     # Linecount
     if isScript "$location"; then # Check if it is a script
