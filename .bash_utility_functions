@@ -10,6 +10,7 @@ unset DEBUG # Turn db* logging off. Set to any value to turn on.
 export _debugLog="$HOME/.log/dbout.log"
 unset funcTrace # Turn functionTracingDebug header logging off. Set to any value to turn on.
 export _functraceLog="$HOME/.log/functrace.log"
+export _describeScriptLinesMax=15
 
 
 # Debugging & Program info
@@ -698,6 +699,7 @@ listVarsLong() {
     done; } | column -s'|' -t
 }
 # ↑↑↑ END listVars
+## DESCRIBE SUITE
 ### What is it?
 # ↓↓↓ def isVar()
 isVar() {
@@ -850,6 +852,20 @@ isBuiltin() {
     return 1 # We didn't find a match
 }
 # ↑↑↑ END isBuiltin
+# ↓↓↓ def isPackage()
+isPackage() {
+    local _DOCSTRING="Returns true/false if arg is/not a name of a package."
+    local _USAGE="Usage: isPackage <name>"
+    functionTracingDebug "$@"
+
+    local  name
+    minimumArguments 1 "$@" || return 3
+    name="$1"
+    
+    dpkg-query -s "$name" >/dev/null 2>&1
+}
+# ↑↑↑ END isPackage
+
 ### Describe it
 # ↓↓↓ def describeVar()
 describeVar() {
@@ -929,6 +945,10 @@ describeFunction() {
             echo
             return
             ;;
+        -n | --no-color)
+            local color=false
+            shift
+            ;;
     esac
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
     local func extdebugSave lineNumber sourceFileName
@@ -943,9 +963,12 @@ describeFunction() {
     } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
     $extdebugSave # Set it back to what it was before.
 
-    setSyntaxHighlighter
-
-    declare -f "$func" | $_SYNTAX_HIGHLIGHTER | indentIt 1  # Print out the function definition.
+    if [[ "$color" != false ]]; then
+        setSyntaxHighlighter
+        declare -f "$func" | $_SYNTAX_HIGHLIGHTER | indentIt 1  # Print out the function definition in color.
+    else
+        declare -f "$func" | indentIt 1  # Print out the function definition without color.
+    fi
 }
 complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
 # ↑↑↑ END describeFunction
@@ -979,7 +1002,7 @@ describeExecutable() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    local location parentPackage symlinkResolutionPath linecount filetype
+    local location parentPackage symlinkResolutionPath linecount filetype packageDescription
 
     # Sanity check
     if ! isExecutable "$arg"; then
@@ -1020,14 +1043,47 @@ describeExecutable() {
         if [[ "$symlinkResolutionPath" != '' ]]; then
             echo "Resolution:|$symlinkResolutionPath"
         fi
+        if [[ "$parentPackage" != '' ]]; then
+            packageDescription="$(dpkg -s "$parentPackage" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+            echo "Parent package:|$parentPackage"
+            # I don't think I want this here. It makes sense that it will just be in the describePackage() function.
+            #echo "Description:$packageDescription"
+        fi
         if [[ "$linecount" != '' ]]; then
             echo "Lines:|$linecount"
         fi
-        echo "Parent package:|$parentPackage"
     :; } | column -t -s'|' | indentIt 2
+    if [[ "$linecount" -lt "${_describeScriptLinesMax}" ]] && [[ "$linecount" > 1 ]]; then # If the script is short (<15 lines), print it in color.
+        setSyntaxHighlighter || _SYNTAX_HIGHLIGHTER=cat
+        echo
+        echo "${travexOrange}CODE:${normal}" | indentIt 2
+        cat "$location" | $_SYNTAX_HIGHLIGHTER | indentIt 3  # Print out the script.
+    fi
 }
 # ↑↑↑ END describeExecutable
-# ↓↓↓ def describe()
+# ↓↓↓ def describePackage()
+describePackage() {
+    local _DOCSTRING="Returns the definition of the packaged given"
+    local _USAGE="Usage: describePackage <name>"
+    functionTracingDebug "$@"
+
+    local  name packageDescription
+    minimumArguments 1 "$@" || return 3
+    name="$1"
+
+    packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    echo "${rustyRed}Package${normal}:"
+    echo "$name" | indentIt 1
+    echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
+    echo
+    echo "${blue}Included executables${normal}:" | indentIt 2
+    dpkg -L "$name" | while read line; # For all the files included in the package
+    do
+        [[ -f "$line" ]] && [[ -x "$line" ]] && echo "$line" | indentIt 3 # Check if it is an executable file, and print it if it is.
+    done
+}
+# ↑↑↑ END describePackage
+# ↓↓↓ def describe() -- Also the alias definition, and bash completion setup.
 describe() {
     local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
     functionTracingDebug "$@"
@@ -1077,6 +1133,7 @@ describe() {
     isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
     isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
     isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
+    isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
 
     return 0
 }
@@ -1122,6 +1179,26 @@ minimumArguments() {
     return 0 # Success. There are the correct number of arguments.
 }
 # ↑↑↑ END minimumArguments
+# ↓↓↓ def getDocstring()
+getDocstring() {
+    local _DOCSTRING="Returns the docstring of the defined function."
+    local _USAGE="Usage: getDocstring <func>"
+    functionTracingDebug "$@"
+
+    local  func docline docstring
+    minimumArguments 1 "$@" || return 3
+    func="$1"
+
+    docline="$(describeFunction -n "$func" | sed -n '6 p')"
+    if [[ "$docline" =~ _DOCSTRING ]]; then
+        docstring="${docline/*local _DOCSTRING=\"/}"
+        docstring="${docstring%%\";}"
+        echo "$docstring"
+    else
+        echo "NONE"
+    fi
+}
+# ↑↑↑ END getDocstring
 
 # Operators, tests, and boolians
 # ↓↓↓ def varsafe()
@@ -1129,10 +1206,10 @@ varsafe() {
     ## Sanatizes a string to be safe as a variable name.
     functionTracingDebug "$@"
     local line safeString
-    if [[ $# -lt 1 ]]; then
+    if [[ $# -lt 1 ]]; then 
         while read line
         do
-            varsafe "$line"
+            $FUNCNAME "$line" # Call self recursively.
         done
     else
         safeString="$(echo "$1" | sed 's/^[^_a-zA-Z]*\([_a-zA-Z][_a-zA-Z0-9]*\).*/\1/g')"
@@ -1153,7 +1230,7 @@ max() {
     minimumArguments 2 "$@" || return 1 # Returns false if there are not enough arguments.
     a=$1
     b=$2
-    if [[ ! "$a" =~ [0-9]* ]] || [[ ! "$a" =~ [0-9]* ]]; then # Check input to be integers.
+    if [[ ! "$a" =~ [0-9]* ]] || [[ ! "$b" =~ [0-9]* ]]; then # Check input to be integers.
         return 1 # Return false if an argument is not an int.
     fi
     [[ "$a" -gt "$b" ]] && result="$a" || result="$b" # Set $result to the larger of $a and $b.
