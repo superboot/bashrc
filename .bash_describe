@@ -1,0 +1,742 @@
+# Arrays
+# ↓↓↓ def __arrayNames()  -- Supporting function
+__arrayNames() {
+    # "returns" (via standard output) the list of current array names, both indexed and associative, one per line.
+    #  Named with a double underbar to denote "not to be used directly by the user".
+    #compgen -A arrayvar # Magic command from #bash on Freenode, user geirha. 08/18/20 17:55:03  Thanks!
+    declare -p | grep 'declare -[aA]' | tr -s ' ' | cut -d' ' -f3 | cut -d'=' -f1 # Better than the above line from geirha, because it print the names of the associative arrays as well as indexed arrays.
+}
+# ↑↑↑ END __arrayNames()
+# ↓↓↓ def __isAssociativeArray() -- Supporting function
+__isAssociativeArray() {
+    ## Returns status (true/false) if the array is an associated  array.
+    local candidate returnValue 
+    candidate="$1"
+    declare -p | grep "declare -A[r]* ${candidate}=" 1>/dev/null 2>/dev/null
+    returnValue=$? # The exit status of the above grep command. Did we find an "A"?
+    return "$returnValue"
+}
+# ↑↑↑ END __isAssociativeArray
+# ↓↓↓ def __printArrayDetails() -- Supporting function
+__printArrayDetails() {
+    ## Prints out the array's structure and contents.
+    local subjectArray rawDeclare rawContents idxKey counter format
+
+    format='cat' # Default filter to do nothing.
+    [[ "$1" == '--reverse' ]] && { format=tac; shift; } # If we were sent a reverse flag, enable the reverse filter.
+
+    subjectArray="$1"
+    declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
+    [[ "${#namerefToArray[@]}" -gt 1 ]] && counter="elements" || counter="element" # Make the anoying s problem go away.
+    echo "${subjectArray}:  ${#namerefToArray[@]} $counter" # Print the name of the array, and the number of elements in it.
+    if [[ "${#namerefToArray[*]}" == 0 ]]; then # if array is empty.
+        echo '    EMPTY'
+    else # Loop through the elements of the array and print them.
+        for idxKey in "${!namerefToArray[@]}"
+        do
+            echo "    [$idxKey]  -->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
+        done | "$format"
+    fi
+}
+# ↑↑↑ END __printArrayDetails
+# ↓↓↓ def existingArrayName() -- Supporting function
+existingArrayName() {
+    ## Checks if the input is a valid array name.
+    local subject existingArray # Declare local variables to this function.
+    subject="$1"
+    for existingArray in $(__arrayNames)
+    do
+        if [[ "$existingArray" == "$subject" ]]; then # If we find the requested array in the list of current arrays.
+            return 0 # Return true. 
+        fi
+    done
+    return 1 # Return false, because we didn't find it.
+}
+# ↑↑↑ END existingArrayName
+# ↓↓↓ def array() -- Master function
+array() {
+    #    array [ARRAY NAME]...
+    ## Returns via stdout the details of the array(s) named in the argument(s).
+    local candidate __arr reverse
+    [[ "$1" == '--reverse' ]] && { reverse=--reverse; shift; } # If we were sent a reverse flag, enable the reverse filter.
+    if [[ $# -gt 0 ]]; then # We have arguments
+        for candidate in "$@" # For each argument.
+        do
+            candidate="$(echo "$candidate" | sed 's/[^a-zA-Z0-9_]/ /g')" # Remove all non alpha-numeric-underbar characters.
+            if existingArrayName "$candidate"; then # If the candidate is the name of an existing array.
+                __printArrayDetails $reverse "$candidate" # $reverse has no quotes so it will expand to nothing if it is empty.
+            fi
+        done
+    else
+        while read __arr # For each name of an active array
+        do
+            array $reverse "$__arr" # Recursively call itself to print the details of that array.
+        done < <(__arrayNames) # Run the __arrayNames function in a subshell and feed it's output as though it were a file into the read loop.
+    fi
+}
+complete -A arrayvar array # Enable tab-completion of array names for the array() function.
+# ↑↑↑ END array
+# ↓↓↓ def arrays()
+arrays() {
+    ## Lists the names of the arrays, and how many members there are.
+    #functionTracingDebug "$@"
+    local prefix selections LONG item
+    # Parse options
+    while [[ "$1" =~ ^- ]]
+    do
+        case "$1" in
+            -l|--long) # Print the elements of each array.
+                LONG=true
+                shift
+                ;;
+        esac
+    done
+
+    if [[ "$1" != '' ]]; then
+        prefix="$1" # The prefix to filter the arrays by.
+        selections="$(compgen -A arrayvar "$prefix" | tr '\n' ' ')"
+    fi
+
+    if [[ "$LONG" == true ]]; then
+        for item in $selections
+        do
+            array "$item"
+        done
+        return 0
+    else
+        array $selections | \grep --color=no '^[^ ]' | column -s':' -t # Print the array names and number of elements in a nice table.
+    fi
+}
+# ↑↑↑ END arrays
+
+
+# ↓↓↓ def repeatString()
+repeatString() {
+    local _DOCSTRING="Returns the given string repeated N times."
+    local _USAGE="Usage: repeatString <string> <n>"
+    functionTracingDebug "$@"
+
+    local  string n
+    minimumArguments 2 "$@" || return 3
+    string=$1
+    n=$2
+
+    local NOTUSED returnValue
+    
+    for NOTUSED in $(seq "$n")
+    do
+        returnValue="$returnValue$string"
+    done
+    printf '%s' "$returnValue"
+}
+# ↑↑↑ END repeatString
+# ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
+functionTracingDebug() {
+    local _DOCSTRING="Logs information about the function call this function was called from."
+    local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
+
+    local logfile args indent depth callingFunction fourSpaces
+
+    if [[ ! -v funcTrace ]]; then # Are we enabled?
+        return 0
+    fi
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_functraceLog"
+    fi
+
+    args=( "$@" )
+    depth="$(( ${#FUNCNAME[*]} - 1 ))"
+    callingFunction="${FUNCNAME[1]}"
+    fourSpaces='    '
+    for level in "$(seq "$depth")"
+    do
+        indent="$indent$fourSpaces"
+    done
+
+    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
+}
+# ↑↑↑ END functionTracingDebug
+# ↓↓↓ def indentIt()
+indentIt() {
+    local _DOCSTRING="Indents each input line by N * '    ' (4 spaces)."
+    local _USAGE="Usage: indentIt <n>"
+    functionTracingDebug "$@"
+
+    local  n
+    minimumArguments 1 "$@" || return 3
+    n="$1"
+
+    local indentation
+
+    indentation="$(repeatString '    ' "$n")"
+
+    cat | while IFS='' read line
+    do
+        echo "$indentation$line"
+    done
+}
+# ↑↑↑ END indentIt
+# ↓↓↓ def setSyntaxHighlighter()
+setSyntaxHighlighter() {
+    local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
+    local _USAGE="Usage: setSyntaxHighlighter "
+    functionTracingDebug "$@"
+
+    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
+        if [[ -x "$(which pygmentize)" ]]; then
+            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
+            return 0
+        else
+            _SYNTAX_HIGHLIGHTER="$(which cat)"
+            return 1
+        fi
+    fi
+}
+# ↑↑↑ END setSyntaxHighlighter
+# ↓↓↓ def minimumArguments()
+minimumArguments() {
+    ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
+    # Call:   minimumArguments <minimumArgumentsRequired> <arguments>
+    local minimumArgumentsRequired numberOfArgsSupplied callingFunction
+    callingFunction="${FUNCNAME[1]}"
+    minimumArgumentsRequired="$1"
+    shift # clear $1 and shift all args down one.
+    numberOfArgsSupplied="$#"
+    [[ "$minimumArgumentsRequired" =~ [^0-9] ]] && raiseError 3 "${callingFunction}: Invalid non-integer 'minimum number of arguments' argument supplied." && return 3 # if we have anything but a number as input, error out.
+    [[ "$numberOfArgsSupplied" -lt "$minimumArgumentsRequired" ]] && raiseError 3 "${callingFunction}: Too few arguments. Got $numberOfArgsSupplied of the $minimumArgumentsRequired required: $(listArgs "$@") " && return 3 # If there is a miss-match in the number of arguments, report an error, naming the parent function.
+    return 0 # Success. There are the correct number of arguments.
+}
+# ↑↑↑ END minimumArguments
+# ↓↓↓ def listVarsLong()
+listVarsLong() {
+    local _DOCSTRING="Pretty print the name and value of each variable name supplied."
+    local _USAGE="Usage: listVars names of vars"
+    functionTracingDebug "$@"
+
+    local varName indent
+
+    while [[ "$1" =~ ^--.*= ]]
+    do
+        case "$1" in
+            --indent)
+                indent="${1##*=}"
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    echo
+    { for varName in "$@"
+    do
+        declare -n nameRefToVar=$varName
+        echo "$indent    $dodgerBlue$varName$normal |--> $purple$nameRefToVar$normal"
+    done; } | column -s'|' -t
+}
+# ↑↑↑ END listVars
+
+# ↓↓↓ def setColors()
+setColors() {
+    ## Sets global variables for term specific color escape codes.
+    ### Variables are in the global scope.
+    functionTracingDebug "$@"
+    if [[ ! -v colorsSet ]]; then
+        if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
+            # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
+            red=$(tput setaf 1) &&
+            alertRed=$(tput setaf 196) &&
+            rustyRed=$(tput setaf 95) &&
+            seriouslyRed=$(tput setaf 88) &&
+            liabilityPink=$(tput setaf 211) &&
+            green=$(tput setaf 2) &&
+            aquaMarine=$(tput setaf 79) &&
+            cvagDark=$(tput setaf 65) &&
+            cvagMed=$(tput setaf 78) &&                 # AKA, "Electric".
+            cvagLight=$(tput setaf 114) &&
+            cvagLightest=$(tput setaf 194) &&
+            yellow=$(tput setaf 3) &&
+            peach=$(tput setaf 224) &&
+            warmOrange=$(tput setaf 173) &&
+            travexOrange=$(tput setaf 214) &&
+            lemon=$(tput setaf 179) &&
+            taxexYellow=$(tput setaf 11) &&
+            blue=$(tput setaf 4) &&
+            blueMidnight=$(tput setaf 17) &&
+            dodgerBlue=$(tput setaf 33) &&
+            fancyBlue=$(tput setaf 21) &&
+            slsbDark=$(tput setaf 24) &&
+            slsbMed=$(tput setaf 31) &&                 # AKA, "Starry night".
+            slsbLight=$(tput setaf 116) &&
+            slsbLightest=$(tput setaf 188) &&
+            purple=$(tput setaf 5) &&
+            princePurpleDarkest=$(tput setaf 53) &&
+            princePurpleDark=$(tput setaf 90) &&
+            princePurple=$(tput setaf 127) &&
+            princePurpleLight=$(tput setaf 200) &&
+            powder=$(tput setaf 152) &&
+            boldOrange=$(tput setaf 178) &&
+            sunFlower=$(tput setaf 220) &&
+            tinGray=$(tput setaf 102) &&
+            cyan=$(tput setaf 6) &&
+            bold=$(tput bold) &&
+            normal=$(tput sgr0) &&
+            colorsSet=true ||
+            return 1 # Something went wrong in the assignments.
+        else
+            return 1 # We don't have color capability.
+        fi
+    return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
+    fi
+}
+
+# ↑↑↑ END setColors
+setColors # Setup the color variables for colored text output.
+
+## DESCRIBE SUITE
+### What is it?
+# ↓↓↓ def isVar()
+isVar() {
+    local _DOCSTRING="Returns true/false if arg is/not a variable."
+    local _USAGE="Usage: isVar <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist
+
+    declare -p | grep 'declare -[-x]' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isVar
+# ↓↓↓ def isAscii()
+isAscii() {
+    local _DOCSTRING="Returns true/false if arg is/not a ASCII text."
+    local _USAGE="Usage: isAscii <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist filetype
+
+    file "$arg" | grep 'ASCII text' >/dev/null 2>/dev/null && return 0 
+    return 1
+    
+}
+# ↑↑↑ END isVar
+# ↓↓↓ def isScript()
+isScript() {
+    local _DOCSTRING="Returns true/false if arg is/not a script."
+    local _USAGE="Usage: isScript <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local varlist filetype
+
+    # Pull out the first field after the file name, and see if it contains "script".
+    file "$arg" | cut -d':' -f2 | cut -d',' -f1 | grep 'script' >/dev/null 2>/dev/null && return 0 
+    return 1
+    
+}
+# ↑↑↑ END isVar
+# ↓↓↓ def isArray()
+isArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    arrays | cut -d' ' -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isArray
+# ↓↓↓ def isIndexedArray()
+isIndexedArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an indexed array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -p | grep 'declare -a' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isIndexedArray
+# ↓↓↓ def isAssociativeArray()
+isAssociativeArray() {
+    local _DOCSTRING="Returns true/false if arg is/not an associative array."
+    local _USAGE="Usage: isArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -p | grep 'declare -A' | cut -d= -f1 | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAssociativeArray
+# ↓↓↓ def isAlias()
+isAlias() {
+    local _DOCSTRING="Returns true/false if arg is/not an alias."
+    local _USAGE="Usage: isAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    alias | cut -d' ' -f 2 | cut -d= -f1 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isAlias
+# ↓↓↓ def isFunction()
+isFunction() {
+    local _DOCSTRING="Returns true/false if arg is/not a function."
+    local _USAGE="Usage: isFunction <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    declare -F | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+}
+# ↑↑↑ END isFunction
+# ↓↓↓ def isExecutable()
+isExecutable() {
+    local _DOCSTRING="Returns true/false if arg is/not an executable on the PATH."
+    local _USAGE="Usage: isExecutable arg"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    which "$arg" >/dev/null 2>/dev/null
+}
+# ↑↑↑ END isExecutable
+# ↓↓↓ def isBuiltin()
+isBuiltin() {
+    local _DOCSTRING="Returns true/false if arg is/not a shell builtin."
+    local _USAGE="Usage: isBuiltin <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local allBuiltins builtin
+
+    allBuiltins="$(help | tail -n38 | while read line; do echo "${line%% *}"; done; help | tail -n38 | while read line; do x="${line##*  }"; echo "${x%% *}"; done)"
+
+    for builtin in $allBuiltins
+    do
+        if [[ "$arg" == "$builtin" ]]; then
+            return 0 # Success!
+        fi
+    done
+    return 1 # We didn't find a match
+}
+# ↑↑↑ END isBuiltin
+# ↓↓↓ def isPackage()
+isPackage() {
+    local _DOCSTRING="Returns true/false if arg is/not a name of a package."
+    local _USAGE="Usage: isPackage <name>"
+    functionTracingDebug "$@"
+
+    local  name
+    minimumArguments 1 "$@" || return 3
+    name="$1"
+    
+    dpkg-query -s "$name" >/dev/null 2>&1
+}
+# ↑↑↑ END isPackage
+
+### Describe it
+# ↓↓↓ def describeVar()
+describeVar() {
+    local _DOCSTRING="Returns the definition of the variable."
+    local _USAGE="Usage: describeVar <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${taxexYellow}Variable${normal}:"
+    listVarsLong "$arg"
+}
+# ↑↑↑ END describeVar
+# ↓↓↓ def describeIndexedArray()
+describeIndexedArray() {
+    local _DOCSTRING="Returns the definition of the indexed array."
+    local _USAGE="Usage: describeIndexedArray <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${dodgerBlue}Indexed array${normal}:"
+    array "$arg" | indentIt 1
+}
+# ↑↑↑ END describeIndexedArray
+# ↓↓↓ def describeAssociativeArray()
+describeAssociativeArray() {
+    local _DOCSTRING="Returns the definition of the indexed array."
+    local _USAGE="Usage: describeAssociativeArray<arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    echo "${red}Associative array${normal}:"
+    array "$arg" | indentIt 1
+}
+# ↑↑↑ END describeAssociativeArray
+# ↓↓↓ def describeAlias()
+describeAlias() {
+    local _DOCSTRING="Returns the definition of the alias."
+    local _USAGE="Usage: describeAlias <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local aliasDef 
+
+    if ! isAlias "$arg"; then
+        return 1
+    fi
+
+    setSyntaxHighlighter
+
+    aliasDef="$(alias "$arg" | cut -d= -f2-)"
+
+    echo "${purple}Alias${normal}:"
+    echo -n "    $arg = "
+    echo "$aliasDef" | $_SYNTAX_HIGHLIGHTER # Print out the function definition.
+}
+# ↑↑↑ END describeAlias
+# ↓↓↓ def describeFunction()
+describeFunction() {
+    local _DOCSTRING="Prints the source code for a defined function. Usage: describe <function>"
+    functionTracingDebug "$@"
+    case "$1" in
+        --help | -h)
+            echo
+            echo $_DOCSTRING
+            echo
+            return
+            ;;
+        -n | --no-color)
+            local color=false
+            shift
+            ;;
+    esac
+    minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
+    local func extdebugSave lineNumber sourceFileName
+    func="$1"
+    extdebugSave="$(shopt -p extdebug)"
+
+    shopt -s extdebug
+    echo "${liabilityPink}Function${normal}:"
+    declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
+    echo "    ${green}Source:${normal} $sourceFileName"
+    echo "    ${green}Line number:${normal} $lineNumber"
+    } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
+    $extdebugSave # Set it back to what it was before.
+
+    if [[ "$color" != false ]]; then
+        setSyntaxHighlighter
+        declare -f "$func" | $_SYNTAX_HIGHLIGHTER | indentIt 1  # Print out the function definition in color.
+    else
+        declare -f "$func" | indentIt 1  # Print out the function definition without color.
+    fi
+}
+complete -A function describe # Set tab-completeion of arguments to be matched to defined functions in the environment.
+# ↑↑↑ END describeFunction
+# ↓↓↓ def describeBuiltin()
+describeBuiltin() {
+    local _DOCSTRING="Docstring"
+    local _USAGE="Usage: describeBuiltin <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    isBuiltin "$arg" || return 1
+
+    local description 
+
+    description="$(help "$arg" | head -n2 | tail -n1)"
+
+    echo "${warmOrange}Built-in${normal}:"
+    echo "    $arg: $description"
+}
+# ↑↑↑ END describeBuiltin
+# ↓↓↓ def describeExecutable()
+describeExecutable() {
+    local _DOCSTRING="Returns information about the executable."
+    local _USAGE="Usage: describeExecutable <arg>"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    local location parentPackage symlinkResolutionPath linecount filetype packageDescription
+
+    # Sanity check
+    if ! isExecutable "$arg"; then
+        return 1
+    fi
+
+    # Location
+    location="$(which "$arg")"
+
+    # Derefference symlinks
+    if [[ -L "$location" ]]; then
+        symlinkResolutionPath+="${cyan}$location${normal}"
+        while [[ -L "$location" ]]  
+        do
+            location="$(readlink -f "$location")"
+            symlinkResolutionPath+=" --> ${cyan}$location${normal}"
+        done
+    fi
+
+    # Parent package
+    parentPackage="$(dlocate "$location" | head -n1 | cut -d':' -f1)"
+
+    # Filetype
+    filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
+    filetype="$(echo "$filetype" | sed 's/^ *//g')" # Get rid of leading spaces.
+
+    # Linecount
+    if isScript "$location"; then # Check if it is a script
+        linecount="$(wc -l "$location" | cut -d' ' -f1)"
+    fi
+
+    # Display
+    echo "${green}Executable on PATH${normal}:"
+    echo "    $arg:"
+    { 
+        echo "Path:|$location"
+        echo "Type:|$filetype"
+        if [[ "$symlinkResolutionPath" != '' ]]; then
+            echo "Resolution:|$symlinkResolutionPath"
+        fi
+        if [[ "$parentPackage" != '' ]]; then
+            packageDescription="$(dpkg -s "$parentPackage" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+            echo "Parent package:|$parentPackage"
+            # I don't think I want this here. It makes sense that it will just be in the describePackage() function.
+            #echo "Description:$packageDescription"
+        fi
+        if [[ "$linecount" != '' ]]; then
+            echo "Lines:|$linecount"
+        fi
+    :; } | column -t -s'|' | indentIt 2
+    if [[ "$linecount" -lt "${_describeScriptLinesMax}" ]] && [[ "$linecount" > 1 ]]; then # If the script is short (<15 lines), print it in color.
+        setSyntaxHighlighter || _SYNTAX_HIGHLIGHTER=cat
+        echo
+        echo "${travexOrange}CODE:${normal}" | indentIt 2
+        cat "$location" | $_SYNTAX_HIGHLIGHTER | indentIt 3  # Print out the script.
+    fi
+}
+# ↑↑↑ END describeExecutable
+# ↓↓↓ def describePackage()
+describePackage() {
+    local _DOCSTRING="Returns the definition of the packaged given"
+    local _USAGE="Usage: describePackage <name>"
+    functionTracingDebug "$@"
+
+    local  name packageDescription
+    minimumArguments 1 "$@" || return 3
+    name="$1"
+
+    packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    echo "${rustyRed}Package${normal}:"
+    echo "$name" | indentIt 1
+    echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
+    echo
+    echo "${blue}Included executables${normal}:" | indentIt 2
+    dpkg -L "$name" | while read line; # For all the files included in the package
+    do
+        [[ -f "$line" ]] && [[ -x "$line" ]] && echo "$line" | indentIt 3 # Check if it is an executable file, and print it if it is.
+    done
+}
+# ↑↑↑ END describePackage
+# ↓↓↓ def describe() -- Also the alias definition, and bash completion setup.
+describe() {
+    local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
+    functionTracingDebug "$@"
+    case "$1" in
+        --help | -h)
+            echo
+            echo -e "$_DOCSTRING"
+            echo
+            return
+            ;;
+    esac
+    minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
+    local arg 
+    arg="$1"
+
+    if [[ "${FUNCNAME[1]}" != 'describe' ]]; then # If we were not called by ourselves
+        set -o pipefail
+        describe "$@" | less -FiXWr # Send to the pager, preserving colors, and exiting the pager if there is less than a page.
+        local rv=$?
+        set +o pipefail
+        return "$rv"
+    fi
+
+
+    local returnTrue header separator type keepGoing 
+
+    #local normal="$(tput setaf 230)"
+
+    header='================='
+    separator='================='
+
+    # Check that we have valid input before we print the header... This seems like it's taking the long way to this answer...
+    for type in Var IndexedArray AssociativeArray Alias Function Builtin Executable
+    do
+        is$type "$arg" && keepGoing=yes
+    done
+    if [[ "$keepGoing" != yes ]]; then return 1; fi
+    echo "$header"
+
+    # If we have a valid arg, print the header.
+    #{ isVar "$arg" || isIndexedArray "$arg" || isAssociativeArray "$arg" || isAlias "$arg" || isFunction "$arg" || isBuiltin "$arg" || isExecutable "$arg"; } && echo "$header" || return 1
+
+    isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
+    isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
+    isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
+    isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
+    isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
+    isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
+    isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
+    isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
+
+    return 0
+}
+alias d=describe # <---- SETS UP AN ALIAS.
+complete -A function -A variable -A command -A builtin -A arrayvar describe 
+complete -A function -A variable -A command -A builtin -A arrayvar d 
+# ↑↑↑ END describe
