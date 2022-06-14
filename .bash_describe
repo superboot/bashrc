@@ -1,3 +1,126 @@
+# This suite is used to interogate the current environment and system to obtain a description of a keyword in the various available contexts.
+
+# Meta
+# ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
+functionTracingDebug() {
+    local _DOCSTRING="Logs information about the function call this function was called from."
+    local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
+
+    local logfile args indent depth callingFunction fourSpaces
+
+    if [[ ! -v funcTrace ]]; then # Are we enabled?
+        return 0
+    fi
+
+    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
+        logfile=${1#_log=}
+        shift
+    else
+        logfile="$_functraceLog"
+    fi
+
+    args=( "$@" )
+    depth="$(( ${#FUNCNAME[*]} - 1 ))"
+    callingFunction="${FUNCNAME[1]}"
+    fourSpaces='    '
+    for level in "$(seq "$depth")"
+    do
+        indent="$indent$fourSpaces"
+    done
+
+    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
+}
+# ↑↑↑ END functionTracingDebug
+# ↓↓↓ def minimumArguments()
+minimumArguments() {
+    ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
+    # Call:   minimumArguments <minimumArgumentsRequired> <arguments>
+    local minimumArgumentsRequired numberOfArgsSupplied callingFunction
+    callingFunction="${FUNCNAME[1]}"
+    minimumArgumentsRequired="$1"
+    shift # clear $1 and shift all args down one.
+    numberOfArgsSupplied="$#"
+    [[ "$minimumArgumentsRequired" =~ [^0-9] ]] && raiseError 3 "${callingFunction}: Invalid non-integer 'minimum number of arguments' argument supplied." && return 3 # if we have anything but a number as input, error out.
+    [[ "$numberOfArgsSupplied" -lt "$minimumArgumentsRequired" ]] && raiseError 3 "${callingFunction}: Too few arguments. Got $numberOfArgsSupplied of the $minimumArgumentsRequired required: $(listArgs "$@") " && return 3 # If there is a miss-match in the number of arguments, report an error, naming the parent function.
+    return 0 # Success. There are the correct number of arguments.
+}
+# ↑↑↑ END minimumArguments
+
+# Environment
+# ↓↓↓ def setSyntaxHighlighter()
+setSyntaxHighlighter() {
+    local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
+    local _USAGE="Usage: setSyntaxHighlighter "
+    functionTracingDebug "$@"
+
+    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
+        if [[ -x "$(which pygmentize)" ]]; then
+            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
+            return 0
+        else
+            _SYNTAX_HIGHLIGHTER="$(which cat)"
+            return 1
+        fi
+    fi
+}
+# ↑↑↑ END setSyntaxHighlighter
+# ↓↓↓ def setColors()
+setColors() {
+    ## Sets global variables for term specific color escape codes.
+    ### Variables are in the global scope.
+    functionTracingDebug "$@"
+    if [[ ! -v colorsSet ]]; then
+        if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
+            # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
+            red=$(tput setaf 1) &&
+            alertRed=$(tput setaf 196) &&
+            rustyRed=$(tput setaf 95) &&
+            seriouslyRed=$(tput setaf 88) &&
+            liabilityPink=$(tput setaf 211) &&
+            green=$(tput setaf 2) &&
+            aquaMarine=$(tput setaf 79) &&
+            cvagDark=$(tput setaf 65) &&
+            cvagMed=$(tput setaf 78) &&                 # AKA, "Electric".
+            cvagLight=$(tput setaf 114) &&
+            cvagLightest=$(tput setaf 194) &&
+            yellow=$(tput setaf 3) &&
+            peach=$(tput setaf 224) &&
+            warmOrange=$(tput setaf 173) &&
+            travexOrange=$(tput setaf 214) &&
+            lemon=$(tput setaf 179) &&
+            taxexYellow=$(tput setaf 11) &&
+            blue=$(tput setaf 4) &&
+            blueMidnight=$(tput setaf 17) &&
+            dodgerBlue=$(tput setaf 33) &&
+            fancyBlue=$(tput setaf 21) &&
+            slsbDark=$(tput setaf 24) &&
+            slsbMed=$(tput setaf 31) &&                 # AKA, "Starry night".
+            slsbLight=$(tput setaf 116) &&
+            slsbLightest=$(tput setaf 188) &&
+            purple=$(tput setaf 5) &&
+            princePurpleDarkest=$(tput setaf 53) &&
+            princePurpleDark=$(tput setaf 90) &&
+            princePurple=$(tput setaf 127) &&
+            princePurpleLight=$(tput setaf 200) &&
+            powder=$(tput setaf 152) &&
+            boldOrange=$(tput setaf 178) &&
+            sunFlower=$(tput setaf 220) &&
+            tinGray=$(tput setaf 102) &&
+            cyan=$(tput setaf 6) &&
+            bold=$(tput bold) &&
+            normal=$(tput sgr0) &&
+            colorsSet=true ||
+            return 1 # Something went wrong in the assignments.
+        else
+            return 1 # We don't have color capability.
+        fi
+    return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
+    fi
+}
+
+# ↑↑↑ END setColors
+setColors # Setup the color variables for colored text output.
+
 # Arrays
 # ↓↓↓ def __arrayNames()  -- Supporting function
 __arrayNames() {
@@ -109,108 +232,7 @@ arrays() {
 }
 # ↑↑↑ END arrays
 
-
-# ↓↓↓ def repeatString()
-repeatString() {
-    local _DOCSTRING="Returns the given string repeated N times."
-    local _USAGE="Usage: repeatString <string> <n>"
-    functionTracingDebug "$@"
-
-    local  string n
-    minimumArguments 2 "$@" || return 3
-    string=$1
-    n=$2
-
-    local NOTUSED returnValue
-    
-    for NOTUSED in $(seq "$n")
-    do
-        returnValue="$returnValue$string"
-    done
-    printf '%s' "$returnValue"
-}
-# ↑↑↑ END repeatString
-# ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
-functionTracingDebug() {
-    local _DOCSTRING="Logs information about the function call this function was called from."
-    local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
-
-    local logfile args indent depth callingFunction fourSpaces
-
-    if [[ ! -v funcTrace ]]; then # Are we enabled?
-        return 0
-    fi
-
-    if [[ "$1" =~ ^_log= ]]; then # Peal off the logfile argument. The rest of the args are the ones fed to the call we are logging about.
-        logfile=${1#_log=}
-        shift
-    else
-        logfile="$_functraceLog"
-    fi
-
-    args=( "$@" )
-    depth="$(( ${#FUNCNAME[*]} - 1 ))"
-    callingFunction="${FUNCNAME[1]}"
-    fourSpaces='    '
-    for level in "$(seq "$depth")"
-    do
-        indent="$indent$fourSpaces"
-    done
-
-    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
-}
-# ↑↑↑ END functionTracingDebug
-# ↓↓↓ def indentIt()
-indentIt() {
-    local _DOCSTRING="Indents each input line by N * '    ' (4 spaces)."
-    local _USAGE="Usage: indentIt <n>"
-    functionTracingDebug "$@"
-
-    local  n
-    minimumArguments 1 "$@" || return 3
-    n="$1"
-
-    local indentation
-
-    indentation="$(repeatString '    ' "$n")"
-
-    cat | while IFS='' read line
-    do
-        echo "$indentation$line"
-    done
-}
-# ↑↑↑ END indentIt
-# ↓↓↓ def setSyntaxHighlighter()
-setSyntaxHighlighter() {
-    local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
-    local _USAGE="Usage: setSyntaxHighlighter "
-    functionTracingDebug "$@"
-
-    if [[ ! -v _SYNTAX_HIGHLIGHTER ]]; then # Setup whether or not to use syntax highlighting.
-        if [[ -x "$(which pygmentize)" ]]; then
-            _SYNTAX_HIGHLIGHTER="$(which pygmentize) -l bash"
-            return 0
-        else
-            _SYNTAX_HIGHLIGHTER="$(which cat)"
-            return 1
-        fi
-    fi
-}
-# ↑↑↑ END setSyntaxHighlighter
-# ↓↓↓ def minimumArguments()
-minimumArguments() {
-    ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
-    # Call:   minimumArguments <minimumArgumentsRequired> <arguments>
-    local minimumArgumentsRequired numberOfArgsSupplied callingFunction
-    callingFunction="${FUNCNAME[1]}"
-    minimumArgumentsRequired="$1"
-    shift # clear $1 and shift all args down one.
-    numberOfArgsSupplied="$#"
-    [[ "$minimumArgumentsRequired" =~ [^0-9] ]] && raiseError 3 "${callingFunction}: Invalid non-integer 'minimum number of arguments' argument supplied." && return 3 # if we have anything but a number as input, error out.
-    [[ "$numberOfArgsSupplied" -lt "$minimumArgumentsRequired" ]] && raiseError 3 "${callingFunction}: Too few arguments. Got $numberOfArgsSupplied of the $minimumArgumentsRequired required: $(listArgs "$@") " && return 3 # If there is a miss-match in the number of arguments, report an error, naming the parent function.
-    return 0 # Success. There are the correct number of arguments.
-}
-# ↑↑↑ END minimumArguments
+# Environment Variable Interogation
 # ↓↓↓ def listVarsLong()
 listVarsLong() {
     local _DOCSTRING="Pretty print the name and value of each variable name supplied."
@@ -241,62 +263,48 @@ listVarsLong() {
 }
 # ↑↑↑ END listVars
 
-# ↓↓↓ def setColors()
-setColors() {
-    ## Sets global variables for term specific color escape codes.
-    ### Variables are in the global scope.
+# Formatting
+# ↓↓↓ def repeatString()
+repeatString() {
+    local _DOCSTRING="Returns the given string repeated N times."
+    local _USAGE="Usage: repeatString <string> <n>"
     functionTracingDebug "$@"
-    if [[ ! -v colorsSet ]]; then
-        if [[ -x /usr/bin/tput ]] && tput setaf 1 >&/dev/null; then # if we have tput, and we have a color capable terminal
-            # The following logic chain syntax only does the last thing if all the succeed, and the || <command>  if any of them fail.
-            red=$(tput setaf 1) &&
-            alertRed=$(tput setaf 196) &&
-            rustyRed=$(tput setaf 95) &&
-            seriouslyRed=$(tput setaf 88) &&
-            liabilityPink=$(tput setaf 211) &&
-            green=$(tput setaf 2) &&
-            aquaMarine=$(tput setaf 79) &&
-            cvagDark=$(tput setaf 65) &&
-            cvagMed=$(tput setaf 78) &&                 # AKA, "Electric".
-            cvagLight=$(tput setaf 114) &&
-            cvagLightest=$(tput setaf 194) &&
-            yellow=$(tput setaf 3) &&
-            peach=$(tput setaf 224) &&
-            warmOrange=$(tput setaf 173) &&
-            travexOrange=$(tput setaf 214) &&
-            lemon=$(tput setaf 179) &&
-            taxexYellow=$(tput setaf 11) &&
-            blue=$(tput setaf 4) &&
-            blueMidnight=$(tput setaf 17) &&
-            dodgerBlue=$(tput setaf 33) &&
-            fancyBlue=$(tput setaf 21) &&
-            slsbDark=$(tput setaf 24) &&
-            slsbMed=$(tput setaf 31) &&                 # AKA, "Starry night".
-            slsbLight=$(tput setaf 116) &&
-            slsbLightest=$(tput setaf 188) &&
-            purple=$(tput setaf 5) &&
-            princePurpleDarkest=$(tput setaf 53) &&
-            princePurpleDark=$(tput setaf 90) &&
-            princePurple=$(tput setaf 127) &&
-            princePurpleLight=$(tput setaf 200) &&
-            powder=$(tput setaf 152) &&
-            boldOrange=$(tput setaf 178) &&
-            sunFlower=$(tput setaf 220) &&
-            tinGray=$(tput setaf 102) &&
-            cyan=$(tput setaf 6) &&
-            bold=$(tput bold) &&
-            normal=$(tput sgr0) &&
-            colorsSet=true ||
-            return 1 # Something went wrong in the assignments.
-        else
-            return 1 # We don't have color capability.
-        fi
-    return 0 # We've already run this since colorsSet is true, so do nothing and report "all good" (exit status 0).
-    fi
-}
 
-# ↑↑↑ END setColors
-setColors # Setup the color variables for colored text output.
+    local  string n
+    minimumArguments 2 "$@" || return 3
+    string=$1
+    n=$2
+
+    local NOTUSED returnValue
+    
+    for NOTUSED in $(seq "$n")
+    do
+        returnValue="$returnValue$string"
+    done
+    printf '%s' "$returnValue"
+}
+# ↑↑↑ END repeatString
+# ↓↓↓ def indentIt()
+indentIt() {
+    local _DOCSTRING="Indents each input line by N * '    ' (4 spaces)."
+    local _USAGE="Usage: indentIt <n>"
+    functionTracingDebug "$@"
+
+    local  n
+    minimumArguments 1 "$@" || return 3
+    n="$1"
+
+    local indentation
+
+    indentation="$(repeatString '    ' "$n")"
+
+    cat | while IFS='' read line
+    do
+        echo "$indentation$line"
+    done
+}
+# ↑↑↑ END indentIt
+
 
 ## DESCRIBE SUITE
 ### What is it?
@@ -740,3 +748,5 @@ alias d=describe # <---- SETS UP AN ALIAS.
 complete -A function -A variable -A command -A builtin -A arrayvar describe 
 complete -A function -A variable -A command -A builtin -A arrayvar d 
 # ↑↑↑ END describe
+
+
