@@ -423,19 +423,6 @@ isFunction() {
     declare -F | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isFunction
-# ↓↓↓ def isExecutable()
-isExecutable() {
-    local _DOCSTRING="Returns true/false if arg is/not an executable on the PATH."
-    local _USAGE="Usage: isExecutable arg"
-    functionTracingDebug "$@"
-
-    local  arg
-    minimumArguments 1 "$@" || return 3
-    arg="$1"
-
-    which "$arg" >/dev/null 2>/dev/null
-}
-# ↑↑↑ END isExecutable
 # ↓↓↓ def isBuiltin()
 isBuiltin() {
     local _DOCSTRING="Returns true/false if arg is/not a shell builtin."
@@ -459,6 +446,19 @@ isBuiltin() {
     return 1 # We didn't find a match
 }
 # ↑↑↑ END isBuiltin
+# ↓↓↓ def isExecutable()
+isExecutable() {
+    local _DOCSTRING="Returns true/false if arg is/not an executable on the PATH."
+    local _USAGE="Usage: isExecutable arg"
+    functionTracingDebug "$@"
+
+    local  arg
+    minimumArguments 1 "$@" || return 3
+    arg="$1"
+
+    which "$arg" >/dev/null 2>/dev/null
+}
+# ↑↑↑ END isExecutable
 # ↓↓↓ def isPackage()
 isPackage() {
     local _DOCSTRING="Returns true/false if arg is/not a name of a package."
@@ -469,7 +469,7 @@ isPackage() {
     minimumArguments 1 "$@" || return 3
     name="$1"
     
-    dpkg-query -s "$name" >/dev/null 2>&1
+    dpkg-query -s "$name" >/dev/null 2>&1 || apt-cache show "$name" >/dev/null 2>&1 
 }
 # ↑↑↑ END isPackage
 
@@ -630,7 +630,7 @@ describeExecutable() {
     fi
 
     # Parent package
-    parentPackage="$(dlocate "$location" | head -n1 | cut -d':' -f1)"
+    parentPackage="$(dlocate "$location" | grep "$location$" | head -n1 | cut -d':' -f1)"
 
     # Filetype
     filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
@@ -674,20 +674,57 @@ describePackage() {
     local _USAGE="Usage: describePackage <name>"
     functionTracingDebug "$@"
 
-    local  name packageDescription
+    local  name packageDescription installed
     minimumArguments 1 "$@" || return 3
     name="$1"
 
-    packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    # Check if installed
+    if dpkg -s "$name" >/dev/null 2>&1; then 
+        installed=Installed
+    fi
+
+    # Description
+    if [[ -v installed ]]; then
+        packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    else
+        packageDescription="$(apt-cache show "$name" |  sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    fi
+
+    ## OUTPUT ##
+    # Header
     echo "${rustyRed}Package${normal}:"
-    echo "$name" | indentIt 1
+
+    # Name
+    echo "Name: $name" | indentIt 1
+
+    # State
+    if [[ -v installed ]]; then
+        echo "State: $green$installed$normal" | indentIt 1
+    else
+        echo "State: ${red}Not installed${normal}" | indentIt 1
+    fi
+
+    # Description
+    echo "Description:" | indentIt 1
     echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
+
+    # Spacer
     echo
-    echo "${blue}Included executables${normal}:" | indentIt 2
-    dpkg -L "$name" | while read line; # For all the files included in the package
-    do
-        [[ -f "$line" ]] && [[ -x "$line" ]] && echo "$line" | indentIt 3 # Check if it is an executable file, and print it if it is.
-    done
+
+    # Included executables
+    if [[ -v installed ]]; then 
+        echo "${blue}Included executables${normal}:" | indentIt 1
+        dpkg -L "$name" | while read line # For all the files included in the package
+        do
+            [[ -f "$line" ]] && # If it's a file
+            [[ -x "$line" ]] && # If it's executable
+            echo "$line" | indentIt 2 
+        done
+    else # NOT Installed
+        echo "${blue}Included executables${normal}${red}: GUESS${normal}:" | indentIt 1
+        echo 'NOTE: Not installed, so guessing which files are executable.' | indentIt 1
+        apt-file show "$name" | grep bin. | indentIt 2
+    fi 
 }
 # ↑↑↑ END describePackage
 # ↓↓↓ def describe() -- Also the alias definition, and bash completion setup.
@@ -723,7 +760,7 @@ describe() {
     separator='================='
 
     # Check that we have valid input before we print the header... This seems like it's taking the long way to this answer...
-    for type in Var IndexedArray AssociativeArray Alias Function Builtin Executable
+    for type in Var IndexedArray AssociativeArray Alias Function Builtin Executable Package
     do
         is$type "$arg" && keepGoing=yes
     done
@@ -744,9 +781,29 @@ describe() {
 
     return 0
 }
-alias d=describe # <---- SETS UP AN ALIAS.
+# ↑↑↑ END describe
+# ↓↓↓ Completions
+# isX
+complete -A variable isVar
+complete -A arrayvar isIndexedArray
+complete -A arrayvar isAssociativeArray
+complete -A command  isAlias
+complete -A function isFunction
+complete -A builtin  isBuiltin
+complete -A command  isExecutable
+
+# describeX
+complete -A variable describeVar
+complete -A arrayvar describeIndexedArray
+complete -A arrayvar describeAssociativeArray
+complete -A command  describeAlias
+complete -A function describeFunction
+complete -A builtin  describeBuiltin
+complete -A command  describeExecutable
+
+# describe()
 complete -A function -A variable -A command -A builtin -A arrayvar describe 
 complete -A function -A variable -A command -A builtin -A arrayvar d 
-# ↑↑↑ END describe
+# ↑↑↑ END Completions
 
-
+alias d=describe # <---- SETS UP AN ALIAS.
