@@ -1,5 +1,14 @@
 # This suite is used to interogate the current environment and system to obtain a description of a keyword in the various available contexts.
 
+## Required on-disk utilities:
+###  cut grep tail which wc column tr
+## For Debian:
+###  dpkg dpkg-query dlocate apt-cache 
+## Optional
+###  pygmentize
+###  tput # Used for colored headings etc.
+
+
 # Meta
 # ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
 functionTracingDebug() {
@@ -31,6 +40,14 @@ functionTracingDebug() {
     printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
 }
 # ↑↑↑ END functionTracingDebug
+# ↓↓↓ def raiseError() 
+raiseError() {
+    # Function signature.
+    # error ExitStatus(int) Message(string) 
+    functionTracingDebug "$@"
+    echo "Error: $2" >&2 # Send error message to standard error.
+}
+# ↑↑↑ END raiseError()
 # ↓↓↓ def minimumArguments()
 minimumArguments() {
     ## Checks for a minimum number of arguments. Perhaps later this could be expanded into "argumentSpecs" and would pass/fail baised on specific parameters we are looking for in our arguments.
@@ -45,6 +62,21 @@ minimumArguments() {
     return 0 # Success. There are the correct number of arguments.
 }
 # ↑↑↑ END minimumArguments
+# ↓↓↓ def listArgs()
+listArgs() {
+    ## Lists the arguments sent to it, in a readable, numbered, quoted list.
+    local arg list 
+    declare -i count # Make a counter using bash's "integer" type.
+    list=''
+    while [[ ${#@} -gt -0 ]] # Build the arg list.
+    do
+        count+=1
+        list+="[$count]: \"$1\", "
+        shift # Pop the stack of args. 
+    done
+    echo "$list" # Return the list.
+}
+# ↑↑↑ END listArgs
 
 # Environment
 # ↓↓↓ def setSyntaxHighlighter()
@@ -239,26 +271,13 @@ listVarsLong() {
     local _USAGE="Usage: listVars names of vars"
     functionTracingDebug "$@"
 
-    local varName indent
-
-    while [[ "$1" =~ ^--.*= ]]
-    do
-        case "$1" in
-            --indent)
-                indent="${1##*=}"
-                shift
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
+    local varName 
 
     echo
     { for varName in "$@"
     do
         declare -n nameRefToVar=$varName
-        echo "$indent    $dodgerBlue$varName$normal |--> $purple$nameRefToVar$normal"
+        echo "    $dodgerBlue$varName$normal |--> $purple$nameRefToVar$normal"
     done; } | column -s'|' -t
 }
 # ↑↑↑ END listVars
@@ -482,7 +501,7 @@ isForeignPackage() {
     minimumArguments 1 "$@" || return 3
     name="$1"
     
-    apt-cache show "$name" >/dev/null 2>&1 || apt-cache show "$name" >/dev/null 2>&1 
+    apt-cache show "$name" >/dev/null 2>&1 
 }
 # ↑↑↑ END isPackage
 
@@ -674,7 +693,7 @@ describeExecutable() {
         fi
     :; } | column -t -s'|' | indentIt 2
     if [[ "$linecount" -lt "${_describeScriptLinesMax}" ]] && [[ "$linecount" > 1 ]]; then # If the script is short (<15 lines), print it in color.
-        setSyntaxHighlighter || _SYNTAX_HIGHLIGHTER=cat
+        setSyntaxHighlighter 
         echo
         echo "${travexOrange}CODE:${normal}" | indentIt 2
         cat "$location" | $_SYNTAX_HIGHLIGHTER | indentIt 3  # Print out the script.
