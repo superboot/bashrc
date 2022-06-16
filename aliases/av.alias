@@ -1,0 +1,3 @@
+# AV
+alias dtmf='dtmfdial --output-dev /dev/dsp1'
+alias asciicam='LD_PRELOAD=/usr/lib64/libv4l/v4l1compat.so hasciicam'

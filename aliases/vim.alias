@@ -1,0 +1,4 @@
+alias vims='vim -S ./Session.vim'
+alias vimr='vim --servername jackson --remote-tab'
+alias vimrs='vim --servername jackson -S ./Session.vim'
+alias vimsr='vim --servername jackson -S ./Session.vim'

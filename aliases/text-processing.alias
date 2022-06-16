@@ -1,0 +1,3 @@
+# Text processing
+alias lessr='less -R'
+alias grep='grep --color=auto'

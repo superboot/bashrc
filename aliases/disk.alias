@@ -1,0 +1,4 @@
+# Disks
+alias fdl='fdisk -l'
+alias lsdisk='fdisk -l | grep "^Disk /"'
+alias mounted='mount | grep /dev/sd'

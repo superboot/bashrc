@@ -1,0 +1,2 @@
+alias search='apt-cache search '
+alias fsearch='apt-file search' 

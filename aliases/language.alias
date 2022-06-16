@@ -1,0 +1,6 @@
+# Language
+alias define=sdcv
+alias iow=aiksaurus #thusaurus, alias is a mnumonic: In Other Words
+alias filesystems="apt-cache search fs | egrep '^[a-z]*fs '"
+alias cvacash='gnucash /mass/gnucash-data-files/LIVE/CVACorp/cvacorp-2013-LIVE.gnucash'
+

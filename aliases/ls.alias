@@ -1,0 +1,29 @@
+## Simple ls output in standard form
+alias sl=ls
+alias ls='ls --color=auto'
+alias lsd='ls --group-directories-first --color'
+alias lsdl='ls --group-directories-first --color | less -R'
+alias lsdt="ls -trh --group-directories-first --color | less -R"
+alias la='ls -A --color=always'
+alias lst='ls -rt'
+
+## ls output in -1 (one) form (like list, but without the detail)
+alias lt='ls -1trF'
+alias l1='ls -1'
+
+## Long detailed list form of ls, output in different forms.
+alias ll='ls -lh'
+alias lla='ls -lhA --color=always'
+alias lld="ls -lh --group-directories-first --color | less -R"
+alias ld="ls -1h --group-directories-first --color | less -R"
+alias lldd="ls -lh --group-directories-first --color |grep --color=always ^d | less -R"
+alias llda="ls -lhA --group-directories-first --color | less -R"
+alias lldt="ls -ltrh --group-directories-first --color | less -R"
+alias lldta="ls -ltrhA --group-directories-first --color | less -R"
+alias llt='ls -lrth'
+alias llat='ls -lrthA'
+
+## Tail only the last 3 lines.
+alias lltt='ls -lrth --color | tail -n3'
+alias lt='ls -1trF --color | tail -n3'
+alias lldtt="ls -lth --group-directories-first --color | head -n4"

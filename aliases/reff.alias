@@ -1,0 +1,3 @@
+alias hpt='help test|less'
+alias bashhelp='less ~/odh/linux/bash/bash-ref.txt'
+alias notes='vim ~/notes.txt'

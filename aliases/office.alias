@@ -1,0 +1,6 @@
+# Office
+alias lph=linphonecsh
+alias pdfedit='masterpdfeditor3'
+alias z='zathura'
+alias zt='zathura "$(ls -1tr | tail -n1)"'
+
