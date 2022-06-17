@@ -1,0 +1,20 @@
+#!/bin/bash
+
+## Setup the symlinks required to point to this suite of files.
+
+bashDir="$HOME/.bash"
+archiveDir="$bashDir/local/archive"
+
+if [[ "$(dirname "$0")" != "$bashDir" ]]; then
+    echo "Please move the package to $bashDir and run setup again." >&2
+    exit 1
+fi
+
+for file in .bashrc .bash_logout .bash_history
+do
+    target="$HOME/$file"
+    if [[ ! -L "$target" ]] && [[ -f "$target" ]]; then # If the file is not a symlink and if the file existsgand is a normal file.
+        mv -f "$target" "$archiveDir/original-$file" && ln -s "$bashDir/$file" "$target"
+    fi
+done
+
