@@ -5,16 +5,16 @@
 bashDir="$HOME/.bash"
 archiveDir="$bashDir/local/archive"
 
-if [[ "$(dirname "$0")" != "$bashDir" ]]; then
-    echo "Please move the package to $bashDir and run setup again." >&2
-    exit 1
-fi
+#if [[ "$(dirname "$0")" != "$bashDir" ]]; then
+#    echo "Please move the package to $bashDir and run setup again." >&2
+#    exit 1
+#fi
 
-for file in .bashrc .bash_logout .bash_history
+for file in .bashrc .bash_logout .bash_history .inputrc
 do
     target="$HOME/$file"
-    if [[ ! -L "$target" ]] && [[ -f "$target" ]]; then # If the file is not a symlink and if the file existsgand is a normal file.
-        mv -f "$target" "$archiveDir/original-$file" && ln -s "$bashDir/$file" "$target"
+    if [[ ! -L "$target" ]] && [[ -f "$target" ]]; then # If the file is not a symlink and if the file exists and is a normal file.
+        mv -f "$target" "$archiveDir/original-$file" && ln -s ".bash/$file" "../$target" 
     fi
 done
 
