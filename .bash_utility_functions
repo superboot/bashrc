@@ -386,7 +386,8 @@ warning() {
 # ↓↓↓ def spaceToDash() 
 spaceToDash() {
     functionTracingDebug "$@"
-    echo ${*// /-} # Replace spaces with dashes.
+    local allArgs="$*"
+    echo ${allArgs// /-} # Replace spaces with dashes.
 }
 # ↑↑↑ END spaceToDash()
 # ↓↓↓ def dashToSpace() 
