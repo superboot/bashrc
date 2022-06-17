@@ -721,7 +721,7 @@ listArgs() {
 listArgsLong() {
     local _DOCSTRING="Pretty prints the argv args."
     local argList=( "$@" )
-    array argList # Using the function "array" from ~/.bash_array_functions
+    array argList # Using the function "array" from ~/.bash/.bash_array_functions
 }
 # ↑↑↑ END listArgsLong
 # ↓↓↓ def minimumArguments()

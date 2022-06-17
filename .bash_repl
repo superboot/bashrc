@@ -23,7 +23,7 @@ repl() {
     local debugPipeInput debugPipeOutput commandline greeting
     debugPipeInput="$HOME/.bash/bash_debug_input" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
     debugPipeOutput="$HOME/.bash/bash_debug_output" # This is a fifo special file that acts like a pipe in bash, but is a file on disk.
-    greeting="REPL started. See the FIFOs at ~/.bash_debug_{input,output}"
+    greeting="REPL started. See the FIFOs at ~/.bash/.bash_debug_{input,output}"
     exec 8< "$debugPipeInput" # This creates a file descriptor that opens the input fifo for reading.
     exec 9> "$debugPipeOutput" # This creates a file descriptor that opens the output fifo for writing.
 

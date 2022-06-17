@@ -113,7 +113,7 @@ MARKS_persistMarkToDisk() {
     path=$1
     mark=$2
 
-    echo "$mark|$path" >> ~/.bash_marks # Append the new mark to the disk.
+    echo "$mark|$path" >> "$MARKS_FILE" # Append the new mark to the disk.
     MARKS_readMarksFile # Read in now appended to file, which will eliminate duplicates, keeping the most recently added one.
     MARKS_writeMarksFile # Write out the now de-dupped list.
 }
