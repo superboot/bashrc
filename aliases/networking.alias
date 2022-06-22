@@ -1,4 +1,3 @@
 # Networking
 alias whatports='lsof -Pni4 | grep LISTEN'
 alias wic="wicd-curses"
-alias netmap='ooc /mass/admin/network/network_map.ods'

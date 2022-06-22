@@ -5,5 +5,3 @@ alias wmap='wget -O -  http://www.goes.noaa.gov/GIFS/ECIR.JPG | display'
 alias knob='wget -O -  http://www.nature.nps.gov/air/webcams/parks/grsmpkcam/grpklarge.jpg | display'
 alias spacegame='chromium-bsu'
 alias tetris='gpe-tetris'
-#Jetfighter2
-alias jf='dosbox /home/john/dls/games/dos/jf2/jetfighter-ii/JF2/JF2.EXE'

@@ -43,7 +43,7 @@ fi
 # ↑↑↑2 END DYNAMIC PROMPT
 # ↓↓↓2 BOOKMARKS
 # setup filesystem path bookmarks
-. ~/.bash/.bash_places
+. ~/.bash/local/.bash_places
 # ↑↑↑2 END BOOKMARKS
 # ↓↓↓2 CD AND MARK SYSTEM.
 # Include the 'cd' overriding mark system functions.

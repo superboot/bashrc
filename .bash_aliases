@@ -5,4 +5,12 @@ do
 done
 
 
+# If there are local aliases
+if [[ -d "$HOME/.bash/local/aliases" ]]; then
+    for a in "$HOME/.bash/local/aliases"
+    do
+        . "$a"
+    done
+fi
+
 _importsArray[aliases]="$(( ${_importsArray[aliases]} + 1 ))"
