@@ -5,16 +5,72 @@
 bashDir="$HOME/.bash"
 archiveDir="$bashDir/local/archive"
 
-#if [[ "$(dirname "$0")" != "$bashDir" ]]; then
-#    echo "Please move the package to $bashDir and run setup again." >&2
-#    exit 1
-#fi
 
-for file in .bashrc .bash_logout .bash_history .inputrc
-do
-    target="$HOME/$file"
-    if [[ ! -L "$target" ]] && [[ -f "$target" ]]; then # If the file is not a symlink and if the file exists and is a normal file.
-        mv -f "$target" "$archiveDir/original-$file" && ln -s ".bash/$file" "../$target" 
+
+
+
+
+
+# ↓↓↓ def checkForCorrectPWD()
+checkForCorrectPWD() {
+    local _DOCSTRING="Check that we are in ~/.bash. "
+    local _USAGE="Usage: checkForCorrectPWD "
+    functionTracingDebug "$@"
+
+    if [[ "$(dirname "$0")" != "$bashDir" ]]; then
+        echo "Please move the package to $bashDir and run setup again." >&2
+        exit 1
     fi
-done
+}
+# ↑↑↑ END checkForCorrectPWD
+# ↓↓↓ def createSymlinksInHomeDir()
+createSymlinksInHomeDir() {
+    local _DOCSTRING="Creates symlinks for files in the home dir pointing to our .bash dir. If there are existing files there, they are moved to the archiveDir."
+    local _USAGE="Usage: createSymlinksInHomeDir "
+    functionTracingDebug "$@"
+
+
+    for file in .bashrc .bash_logout .bash_history .inputrc
+    do
+        target="$HOME/$file"
+        if [[ ! -L "$target" ]] && [[ -f "$target" ]]; then # If the file is not a symlink and if the file exists and is a normal file.
+            mv -f "$target" "$archiveDir/original-$file" && ln -s ".bash/$file" "../$target" 
+        fi
+    done
+    
+}
+# ↑↑↑ END createSymlinksInHomeDir
+# ↓↓↓ def createDebuggerFifos()
+createDebuggerFifos() {
+    local _DOCSTRING="Create the debugger input and output fifos if not already there."
+    local _USAGE="Usage: createDebuggerFifos "
+    functionTracingDebug "$@"
+
+    for filename in "$bashDir"/.bash_debug_{input,output} # For both the input and output filesnames
+    do
+        if [[ ! -p "$bashDir/.bash_debug_input" ]] then # If the target is not a fifo
+            if [[ -f "$filename" ]]; then # If there is a regular file at the location we need
+                mv "$filename" "$filename-old-$(date +%y%m%d)" # Move that file to a holding name
+            fi
+            mkfifo "$filename" # Create the fifo we want.
+        fi
+    done
+}
+# ↑↑↑ END createDebuggerFifos
+
+# ↓↓↓ def main()
+main() {
+    local _DOCSTRING="The main setup function."
+    local _USAGE="Usage: main "
+    functionTracingDebug "$@"
+
+    checkForCorrectPWD
+    createSymlinksInHomeDir
+    createDebuggerFifos
+}
+# ↑↑↑ END main
+
+main "$@"
+
+
 
