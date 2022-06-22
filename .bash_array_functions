@@ -190,7 +190,7 @@ lpop() {
 
     returnValue="${popFromThis[0]}"
     # db "Warning: lpop rebuilds the array on top of itself. This will collapse any voids in the given array, and re-zeroth the array." 
-    namedArray=("${namedArray[@]:2}") # Overwrite the original array with all the same values, but for the left most.
+    namedArray=("${namedArray[@]:1}") # Overwrite the original array with all the same values, but for the left most.
 
     _lpopReturn="$returnValue" # Pick up this value.
 }
