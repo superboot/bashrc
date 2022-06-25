@@ -2,11 +2,7 @@
 
 Superbash is a collection of enhancements to bash through small helper functions and an extension/wrapper of the cd (change directory) command, adding breadcrumb traversal and bookmarks. Additionally there is a describe() function (aliased to 'd' by default) that introspects the environment for a name and returns details for it.
 
-<<<<<<< HEAD
 Other niceties are the debugging functions as well as the function tracing functions called at the top of the included functions. The idiom can be copied into your own scripts if preferred.
-=======
-Other niceties are the debugging functions as well as the function tracing functions called at the top of the included functions. The idiom can be copied into your own scripts if proffered 
->>>>>>> 178592a436f7195df5661ebf5e10d25f3a851095
 
 ## Installing
 The idea is to clone the repo and run the setup script. 
@@ -23,24 +19,14 @@ symlink to the appropriate file in ~/.bash/, which then includes the default ~/.
 **Keybindings**
 <<<<<<< HEAD
 1. Alt-p  -- Print breadcrumbs list with position arrow.
-=======
-1. Alt-p  -- Print breadcrums list with position arrow.
->>>>>>> 178592a436f7195df5661ebf5e10d25f3a851095
 2. Alt-o  -- Traverse back one directory.
 3. Alt-i  -- Traverse forward one directory.
 
 **Commands**
-<<<<<<< HEAD
 1. cd <n>     -- Change directory to breadcrumb number <n>.
 2. cd ./n     -- Change directory to directory named ./n
 3. ..         -- Change directory to parent.
 4. upto <dir> -- Change directory up to the named parent directory in the PWD path.
-=======
-cd <n>     -- Change directory to breadcrumb number <n>.
-cd ./n     -- Change directory to directory named ./n
-..         -- Change directory to parent.
-upto <dir> -- Change directory up to the named parent directory in the PWD path.
->>>>>>> 178592a436f7195df5661ebf5e10d25f3a851095
 
 ### Describe
 The describe() function returns the usages of the given name in the current environment. 
