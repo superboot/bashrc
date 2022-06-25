@@ -17,7 +17,6 @@ symlink to the appropriate file in ~/.bash/, which then includes the default ~/.
 
 ### CD enhancements
 **Keybindings**
-<<<<<<< HEAD
 1. Alt-p  -- Print breadcrumbs list with position arrow.
 2. Alt-o  -- Traverse back one directory.
 3. Alt-i  -- Traverse forward one directory.
