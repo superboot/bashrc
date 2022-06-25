@@ -1,5 +1,6 @@
 # Git
-alias gs='git status'
+alias gss='git status'
+alias gs='git status -s'
 alias ga='git add'
 alias gl='git log'
 alias gb='git branch'

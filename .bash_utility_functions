@@ -1061,4 +1061,23 @@ listDaysOfMonth() {
 }
 # ↑↑↑ END listDaysOfMonth
 
+# Directories and files
+# ↓↓↓ def mkcd()
+mkcd() {
+    local _DOCSTRING="Make a directory and change directory into it."
+    local _USAGE="Usage: mkcd [mkdir-options] <dir>"
+    functionTracingDebug "$@"
+
+    local  dir
+    minimumArguments 1 "$@" || return 3
+
+    local args=( "$@" )
+    idx=$(( ${#args[*]} - 1 ))
+    dir="${args["$idx"]}"
+
+    mkdir "$@" && cd "$dir"
+}
+# ↑↑↑ END mkcd
+
+
 _importsArray[utility_functions]="$(( ${_importsArray[utility_functions]} + 1 ))"
