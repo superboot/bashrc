@@ -34,8 +34,8 @@ __printArrayDetails() {
     else # Loop through the elements of the array and print them.
         for idxKey in "${!namerefToArray[@]}"
         do
-            echo "    [$idxKey]  -->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
-        done | "$format"
+            echo "    [$idxKey]  |-->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
+        done | column -t -s '|' | "$format"
     fi
 }
 # ↑↑↑ END __printArrayDetails
@@ -197,6 +197,7 @@ lpop() {
 # ↑↑↑ END lpop
 
 
+
 # Stack
 declare -a _STACK # The default stack array.
 _DEFSTACK="_STACK" # The variable to track the default stack.
@@ -280,4 +281,15 @@ stacks() {
     done
 }
 # ↑↑↑ END stacks
+
+# Completions
+# ↓↓↓1 Completions
+complete -A arrayvar array
+complete -A arrayvar arrays
+complete -A arrayvar lpop
+complete -A arrayvar pop
+complete -W '$(a=( ${!_STACK@} ); echo ${a[*]##_STACK_})' stack # Complete only the id portion of the current available stacks.
+complete -W '$(a=( ${!_STACK@} ); echo ${a[*]##_STACK_})' stacks
+# ↑↑↑1 END Completions
+
 _importsArray[array_functions]="$(( ${_importsArray[array_functions]} + 1 ))"
