@@ -23,8 +23,6 @@
 "\e,": '"$(latestFile)" '
 #" rr": "\C-uranger\C-j"
 
-# For git
-"hh": "HEAD"
 
 # Bash functionalitly
 "\C-t": shell-expand-line
