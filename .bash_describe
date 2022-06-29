@@ -662,7 +662,7 @@ describeExecutable() {
     fi
 
     # Parent package
-    parentPackage="$(dlocate "$location" | grep "$location$" | head -n1 | cut -d':' -f1)"
+    parentPackage="$(dlocate "$location" | grep ": $location$" | head -n1 | cut -d':' -f1)"
 
     # Filetype
     filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
