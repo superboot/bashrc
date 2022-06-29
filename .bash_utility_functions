@@ -301,6 +301,38 @@ command_not_found_handle() {
     return 127;
 }
 # ↑↑↑ END command_not_found_handle
+# ↓↓↓ def showme()
+showme() {
+    local _DOCSTRING="Shows the contents of a file with comments and newlines removed."
+    local _USAGE="Usage: showme <file>"
+    functionTracingDebug "$@"
+
+    local file="$1"
+
+    declare -A patterns
+    declare -a sedArgs
+
+    patterns[removeInlineOctothorpComments]='  s/#.*$//g'
+    patterns[removeInlinePercentComments]='    s/%.*$//g'
+    patterns[removeOctothorpCommentLines]='     /^#.*$/d'
+    patterns[removePercentCommentLines]='       /^%.*$/d'
+    patterns[removeWhitespaceOnlyLines]='       /^[\t ]*$/d'
+    patterns[removeBlankLines]='                /^$/d'
+
+    for pattern in "${patterns[@]}"
+    do
+        sedArgs+=(-e)
+        sedArgs+=("$pattern")
+    done
+
+    if [[ "$file" == '' ]]; then # We didn't get a file argument.
+        cat | sed "${sedArgs[@]}" | less
+    else
+        sed "${sedArgs[@]}" "$file" | less
+    fi
+}
+# ↑↑↑ END showme
+
 
 # Flow control
 # ↓↓↓ def runInBackground()
