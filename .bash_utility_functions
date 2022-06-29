@@ -701,6 +701,17 @@ listVarsLong() {
     done; } | column -s'|' -t
 }
 # ↑↑↑ END listVars
+# ↓↓↓ def imports()
+imports() {
+    local _DOCSTRING="Lists the files 'imported' with '. file' or 'source file', provided that file has a tracing line at the end. See the last line in .bash_utility_functions for an example."
+    local _USAGE="Usage: imports "
+    functionTracingDebug "$@"
+
+    array _importsArray
+}
+# ↑↑↑ END imports
+
+
 
 # Function aids & interrogation
 # ↓↓↓ def listArgs()
