@@ -21,6 +21,7 @@
 #"\e,": '"$(ls -1tr | tail -n1)" '
 "jjlt": '"$(latestFile)"'
 "\e,": '"$(latestFile)" '
+"\C-q": ' 2>/dev/null'
 #" rr": "\C-uranger\C-j"
 
 
