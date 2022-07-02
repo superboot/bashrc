@@ -3,7 +3,7 @@
 ## Required on-disk utilities:
 ###  cut grep tail which wc column tr
 ## For Debian:
-###  dpkg dpkg-query dlocate apt-cache 
+###  dpkg dpkg-query dlocate apt-cache command-not-found
 ## Optional
 ###  pygmentize
 ###  tput # Used for colored headings etc.
@@ -324,6 +324,40 @@ indentIt() {
 }
 # ↑↑↑ END indentIt
 
+# Packages
+# ↓↓↓ def queryDB()
+queryDB() {
+    local _DOCSTRING="Query the package DB from the command_not_found package."
+    local _USAGE="Usage: queryDB <query>"
+    functionTracingDebug "$@"
+
+    local  query
+    minimumArguments 1 "$@" || return 3
+    query="$1"
+
+    local packageDB=/var/lib/command-not-found/commands.db
+
+    sqlite3 "$packageDB" "$query"
+}
+# ↑↑↑ END queryDB
+# ↓↓↓ def packageIsInstalled()
+packageIsInstalled() {
+    local _DOCSTRING="Returns true/false if the package is/not installed."
+    local _USAGE="Usage: packageIsInstalled <package>"
+    functionTracingDebug "$@"
+
+    local  package
+    minimumArguments 1 "$@" || return 3
+    package="$1"
+
+    if dpkg-query -s "$package" &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+# ↑↑↑ END packageIsInstalled
+
 
 ## DESCRIBE SUITE
 ### What is it?
@@ -488,20 +522,11 @@ isPackage() {
     minimumArguments 1 "$@" || return 3
     name="$1"
     
-    dpkg-query -s "$name" >/dev/null 2>&1 
-}
-# ↑↑↑ END isPackage
-# ↓↓↓ def isForeignPackage()
-isForeignPackage() {
-    local _DOCSTRING="Returns true/false if arg is/not a name of a foreign package."
-    local _USAGE="Usage: isForeignPackage <name>"
-    functionTracingDebug "$@"
+    local response
 
-    local  name
-    minimumArguments 1 "$@" || return 3
-    name="$1"
-    
-    apt-cache show "$name" >/dev/null 2>&1 
+    response="$(queryDB "SELECT name FROM packages WHERE name IS \"$name\"")"
+
+    [[ "$response" == "$name" ]] && return 0 || return 1
 }
 # ↑↑↑ END isPackage
 
@@ -683,8 +708,8 @@ describeExecutable() {
             echo "Resolution:|$symlinkResolutionPath"
         fi
         if [[ "$parentPackage" != '' ]]; then
-            packageDescription="$(dpkg -s "$parentPackage" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
             echo "Parent package:|$parentPackage"
+            #packageDescription="$(dpkg -s "$parentPackage" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
             # I don't think I want this here. It makes sense that it will just be in the describePackage() function.
             #echo "Description:$packageDescription"
         fi
@@ -706,12 +731,21 @@ describePackage() {
     local _USAGE="Usage: describePackage <name>"
     functionTracingDebug "$@"
 
-    local  name packageDescription installed
+    local  name 
     minimumArguments 1 "$@" || return 3
     name="$1"
 
-    # Description
-    packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    local packageDescription state isInstalled
+
+    # Installed?
+    if packageIsInstalled "$name"; then
+        state="${green}Installed${normal}"
+        isInstalled=true
+        # Description
+        packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+    else
+        state="${red}Not installed${normal}"
+    fi
 
     ## OUTPUT ##
     # Header
@@ -721,59 +755,27 @@ describePackage() {
     echo "Name: $name" | indentIt 1
 
     # State
-    echo "State: $green$installed$normal" | indentIt 1
+    echo "State: $state" | indentIt 1
 
-    # Description
-    echo "Description:" | indentIt 1
-    echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
 
-    # Spacer
-    echo
+    # If package is installed
+    if [[ -v isInstalled ]]; then
+        # Description
+        echo "Description:" | indentIt 1
+        echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
 
-    # Included executables
-    echo "${blue}Included executables${normal}:" | indentIt 1
-    dpkg -L "$name" | while read line # For all the files included in the package
-    do
-        [[ -f "$line" ]] && # If it's a file
-        [[ -x "$line" ]] && # If it's executable
-        echo "$line" | indentIt 2 
-    done
-}
-# ↑↑↑ END describePackage
-# ↓↓↓ def describeForeignPackage()
-describeForeignPackage() {
-    local _DOCSTRING="Returns the definition of the foreign packaged given"
-    local _USAGE="Usage: describeForeignPackage <name>"
-    functionTracingDebug "$@"
+        # Spacer
+        echo
 
-    local  name packageDescription installed
-    minimumArguments 1 "$@" || return 3
-    name="$1"
-
-    # Description
-    packageDescription="$(apt-cache show "$name" |  sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
-
-    ## OUTPUT ##
-    # Header
-    echo "${rustyRed}Foreign package${normal}:"
-
-    # Name
-    echo "Name: $name" | indentIt 1
-
-    # State
-    echo "State: ${red}Not installed${normal}" | indentIt 1
-
-    # Description
-    echo "Description:" | indentIt 1
-    echo "$packageDescription" | sed 's/^ *//g' | column -t -s'|' | indentIt 2
-
-    # Spacer
-    echo
-
-    # Included executables
-    echo "${blue}Included executables${normal}${red}: GUESS${normal}:" | indentIt 1
-    echo 'NOTE: Not installed, so guessing which files are executable.' | indentIt 1
-    apt-file show "$name" | grep bin. | indentIt 2
+        # Included executables 
+        echo "${blue}Included executables${normal}:" | indentIt 1
+        dpkg -L "$name" | while read line # For all the files included in the package
+        do
+            [[ -f "$line" ]] && # If it's a file
+            [[ -x "$line" ]] && # If it's executable
+            echo "$line" | indentIt 2 
+        done
+    fi
 }
 # ↑↑↑ END describePackage
 # ↓↓↓ def describe() -- Also the alias definition, and bash completion setup.
@@ -801,10 +803,6 @@ describe() {
                 echo
                 return
                 ;;
-            -f | --foreign)
-                foreign=True
-                shift
-                ;;
             *)
                 break
                 ;;
@@ -821,9 +819,6 @@ describe() {
 
     # Check that we have valid input before we print the header... This seems like it's taking the long way to this answer...
     categories=(Var IndexedArray AssociativeArray Alias Function Builtin Executable Package )
-    if [[ -v foreign ]]; then # If we got the -f flag
-        categories+=( ForeignPackage ) # Check for existence of forgeing packages by the name. This is expensive.
-    fi
     for type in "${categories[@]}"
     do
         is$type "$arg" && keepGoing=yes
@@ -842,9 +837,6 @@ describe() {
     isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
     isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
     isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
-    if [[ -v foreign ]]; then
-        isForeignPackage   "$arg" && { describeForeignPackage   "$arg"; echo "$separator"; } # Yellow
-    fi
 
     return 0
 }
