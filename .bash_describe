@@ -337,7 +337,7 @@ queryDB() {
 
     local packageDB=/var/lib/command-not-found/commands.db
 
-    sqlite3 "$packageDB" "$query"
+    sqlite3 "$packageDB" "$query" 2>/dev/null
 }
 # ↑↑↑ END queryDB
 # ↓↓↓ def packageIsInstalled()
