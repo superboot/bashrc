@@ -244,11 +244,8 @@ functionTracingDebug() {
 # ↓↓↓ def functrace()
 functrace() {
     local _DOCSTRING="Displays or sets the funcTrace functionality."
-    local _USAGE="Usage: functrace [off/on]"
+    local _USAGE="Usage: functrace [-lcvh] [off/on]"
     functionTracingDebug "$@"
-
-    local  arg
-    arg="${1}"
 
     # No args --> print status
     if [[ "$#" -eq 0 ]]; then # We got no arguments
@@ -261,38 +258,34 @@ functrace() {
         return 0
     fi
 
+    # Parse options
     while [[ "$#" -gt 0 ]]
     do
         case "$1" in
             y|Y|yes|YES|on|On|ON)
-                export funcTrace=on
-                return 0
+                local arg_on=true
+                shift
                 ;;
             n|N|no|NO|f|F|off|OFF)
-                unset funcTrace
-                return 0
+                local arg_off=true
+                shift
                 ;;
             --log|-l)
-                if [[ "$2" != '' ]]; then # If we were sent a path
-                    local connonicalPath="$(realpath $2)"
-                    if regularWritable "$connonicalPath"; then  # If is regular file, and writable
-                        export _functraceLog="$connonicalPath" 
-                        return 0
-                    else
-                        return 1
-                    fi
-                    shift 2 # remove '--set' and '/path/to/logfile' from ARGV ($@)
+                local opt_log=true
+                if [[ "$2" =~ ^[./] ]]; then # If we were sent a path
+                    local opt_logpath="$2"
+                    shift 2
                 else
-                    echo "$_functraceLog"
-                    return 0
+                    shift 1
                 fi
                 ;;
             --clear|-c)
-                local CLEAR=true
+                local opt_clear=true
                 shift
                 ;;
             --view|-v)
-                :
+                local opt_view=true
+                shift
                 ;;
             --help|-h)
                 cat <<-EOF
@@ -305,10 +298,11 @@ functrace() {
 						
 						    Options: 
 						      -h, --help          List this help screen.
-						      -l, --log           Prints the path to the current log file
+						      -l, --log           Prints the path to the current log file.
 						                            If given a path argument, sets the log
 						                            file for this environment and subshells.
 						      -c, --clear         Empty the logfile (optionally specified on the same commandline)
+						      -v, --view          Tail -f the functrace log file.
 						
 						    The functrace system uses a function functionTracingDebug() that is explicitly
 						    called at the top of a function:
@@ -329,11 +323,42 @@ functrace() {
                 return 0
         esac
 
-        # Process --clear option. 
+        # -l, --log
+        if [[ -v opt_log ]]; then
+            if [[ -v opt_logpath ]]; then
+                local connonicalPath="$(realpath "$opt_logpath")"
+                if regularWritable "$connonicalPath"; then  # If is regular file, and writable
+                    export _functraceLog="$connonicalPath" 
+                else
+                    printf "Supplied path is not a regular writable file." >&2
+                    return 1
+                fi
+            else # Without an argument to -l, just print the current path to log file.
+                echo "$_functraceLog"
+                return 0
+            fi
+        fi
+
+        # -c, --clear
         #     Because the log file might have been changed by another
         #     option, we need to do this after all args are parsed.
-        if [[ -v CLEAR ]]; then
+        if [[ -v opt_clear ]]; then
             :>"$_functraceLog"
+        fi
+        
+        # -v, --view
+        if [[ -v opt_view ]]; then # -v, --view option execution
+            tail -f "$_functraceLog"
+        fi
+
+        # [on]
+        if [[ -v arg_on ]]; then
+            export funcTrace=true
+        fi
+
+        # [off]
+        if [[ -v arg_off ]]; then
+            unset funcTrace=true
         fi
     done
 }
