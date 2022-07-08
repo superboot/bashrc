@@ -38,6 +38,14 @@ db() {
                 caller=${1#_caller=}
                 shift
                 ;;
+            --status)
+                if [[ -v DEBUG ]]; then
+                    echo "${green}ON${normal}: $_debugLog"
+                else
+                    echo "${red}OFF${normal}: $_debugLog"
+                fi
+                return 25
+                ;;
         esac
     done
 
@@ -142,12 +150,57 @@ dblv() {
 }
 # ↑↑↑ END dblv
 
+# ↓↓↓ def debugLog()
+debugLog() {
+    local _DOCSTRING="Watch the default debug log file for new output."
+    local _USAGE="Usage: watchDebugLog "
+    functionTracingDebug "$@"
+
+    if [[ "$#" == 0 ]]; then # If no arguments supplied
+        echo "$_debugLog" # Print the currently assigned debug log file
+        return 0
+    fi
+    while [[ "$#" -gt 0 ]]
+    do
+        case "$1" in
+            --log|-l)
+                local connonicalPath="$(realpath "$1")"
+                if regularWritable "$connonicalPath"; then  # If is regular file, and writable
+                    _debugLog="$connonicalPath" 
+                    return 0
+                else
+                    return 1
+                fi
+                ;;
+            --clear|-c)
+                local CLEAR='true'
+                ;;
+        esac
+
+        # Process --clear option. 
+        #     Because the log file might have been changed by another
+        #     option, we need to do this after all args are parsed.
+        if [[ -v CLEAR ]]; then
+            if :>"$_debugLog"; then
+                echo "Cleared: $_debugLog"
+                return 0
+            else
+                echo "Could not clear: $_debugLog"
+                return 1
+            fi
+        fi
+    done
+}
+# ↑↑↑ END debugLog
+
 # ↓↓↓ def functionTracingDebug() ## Used in ultisnip generated function header. ##
 functionTracingDebug() {
     local _DOCSTRING="Logs information about the function call this function was called from."
     local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
 
-    local logfile args indent depth callingFunction fourSpaces
+    # Locals
+    local logfile args indent depth callingFunction callerOfCaller calledByString
+    local definedInSourceFile callingLineNumber calledInSourceFile
 
     if [[ ! -v funcTrace ]]; then # Are we enabled?
         return 0
@@ -161,17 +214,131 @@ functionTracingDebug() {
     fi
 
     args=( "$@" )
-    depth="$(( ${#FUNCNAME[*]} - 1 ))"
-    callingFunction="${FUNCNAME[1]}"
-    fourSpaces='    '
-    for level in "$(seq "$depth")"
-    do
-        indent="$indent$fourSpaces"
-    done
 
-    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
+    # Check for recursive calls of this function
+    for funcNumber in $(seq 1 $((${#FUNCNAME[@]} - 1 )) )  # For each function in the call stack other than ourselves
+    do
+        funcName="${FUNCNAME[$funcNumber]}"
+        if [[ "$funcName" == 'functionTracingDebug' ]]; then # If that name is our name, aka, we've been called by something that was called by us
+            return 0 # Just return because it is recursive otherwise.
+        fi
+    done
+    
+    # Callers
+    callingFunction="${FUNCNAME[1]}"
+    if [[ "${FUNCNAME[2]}" != '' ]]; then # If the calling function was called by a function
+        callerOfCaller="${FUNCNAME[2]}"
+        calledByString=" Called by: $blue$callerOfCaller$normal"
+    fi
+
+    # Calling function source
+    depth="$(( ${#FUNCNAME[*]} - 1 ))"
+    definedInSourceFile="${BASH_SOURCE[1]}"
+    calledInSourceFile="${BASH_SOURCE[0]}"
+    callingLineNumber="${BASH_LINENO[0]}"
+
+    # Output
+    printf "[Depth: $depth] Entering ${red}${callingFunction}${normal}$calledByString\nCalled from: $calledInSourceFile\nCalled on line number: $callingLineNumber\nDefined in: $definedInSourceFile\n$(listArgsLong $@)\n\n" | indentIt "$depth" >> "$logfile"
 }
 # ↑↑↑ END functionTracingDebug
+# ↓↓↓ def functrace()
+functrace() {
+    local _DOCSTRING="Displays or sets the funcTrace functionality."
+    local _USAGE="Usage: functrace [off/on]"
+    functionTracingDebug "$@"
+
+    local  arg
+    arg="${1}"
+
+    # No args --> print status
+    if [[ "$#" -eq 0 ]]; then # We got no arguments
+        if [[ -v funcTrace ]]; then # If function tracing is on
+            printf "Function logging is ${green}ON${normal}\n"
+            
+        else
+            printf "Function logging is ${red}OFF${normal}\n"
+        fi
+        return 0
+    fi
+
+    while [[ "$#" -gt 0 ]]
+    do
+        case "$1" in
+            y|Y|yes|YES|on|On|ON)
+                export funcTrace=on
+                return 0
+                ;;
+            n|N|no|NO|f|F|off|OFF)
+                unset funcTrace
+                return 0
+                ;;
+            --log|-l)
+                if [[ "$2" != '' ]]; then # If we were sent a path
+                    local connonicalPath="$(realpath $2)"
+                    if regularWritable "$connonicalPath"; then  # If is regular file, and writable
+                        export _functraceLog="$connonicalPath" 
+                        return 0
+                    else
+                        return 1
+                    fi
+                    shift 2 # remove '--set' and '/path/to/logfile' from ARGV ($@)
+                else
+                    echo "$_functraceLog"
+                    return 0
+                fi
+                ;;
+            --clear|-c)
+                local CLEAR=true
+                shift
+                ;;
+            --view|-v)
+                :
+                ;;
+            --help|-h)
+                cat <<-EOF
+						functrace: functrace [--help, -h] [--log, -l [/path/to/logfile]] [--clear, -c] [on|off]
+						    Manipulates the function tracing facilities.
+						
+						    Arguments:
+						      on, yes, o, y       Turn on logging
+						      off, no, f, n       Turn off logging
+						
+						    Options: 
+						      -h, --help          List this help screen.
+						      -l, --log           Prints the path to the current log file
+						                            If given a path argument, sets the log
+						                            file for this environment and subshells.
+						      -c, --clear         Empty the logfile (optionally specified on the same commandline)
+						
+						    The functrace system uses a function functionTracingDebug() that is explicitly
+						    called at the top of a function:
+						
+						      myfunc() {
+						          functionTracingDebug "\$@"
+						          rest_of_code...
+						          return 0
+						      }
+						
+						    This loggs information about the enclosing function call to the log file
+						    set in \$_functraceLog. This environment variable is manipulated by this 
+						    command's --log option.
+						
+						    Logging can be toggled by sending an ON or OFF argument.
+						
+						EOF
+                return 0
+        esac
+
+        # Process --clear option. 
+        #     Because the log file might have been changed by another
+        #     option, we need to do this after all args are parsed.
+        if [[ -v CLEAR ]]; then
+            :>"$_functraceLog"
+        fi
+    done
+}
+# ↑↑↑ END functrace
+
 # ↓↓↓ def stackTrace()
 stackTrace() {
     ## Prints a stack trace. Needs work... TODO Make this better.
@@ -859,6 +1026,23 @@ min() {
 # ↑↑↑ END min
 
 # Filesystem interrogation
+# ↓↓↓ def regularWritable()
+regularWritable() {
+    local _DOCSTRING="Returns bool (true/false) if file is/not a regular file and writable by the current user."
+    local _USAGE="Usage: regularWritable <file>"
+    functionTracingDebug "$@"
+
+    local  file
+    minimumArguments 1 "$@" || return 3
+    file="$1"
+
+    if [[ -f "$file" ]] && [[ -w "$file" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+# ↑↑↑ END regularWritable
 # ↓↓↓ def latestFileInDir()
 latestFileInDir() {
     local _DOCSTRING="Returns the name (no path) of the file most recently modified in the supplied directory, or PWD if none. (taken from wooledge.org)"
