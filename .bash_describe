@@ -189,8 +189,8 @@ __printArrayDetails() {
     else # Loop through the elements of the array and print them.
         for idxKey in "${!namerefToArray[@]}"
         do
-            echo "    [$idxKey]  -->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
-        done | "$format"
+            echo "    [$idxKey]  |-->  \"${namerefToArray[$idxKey]}\"" # Echo an indented index/key and value pair: [key]  -->  "value"
+        done | column -t -s '|' | "$format"
     fi
 }
 # ↑↑↑ END __printArrayDetails
