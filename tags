@@ -17,7 +17,6 @@ __isAssociativeArray	.bash_array_functions	/^__isAssociativeArray() {$/;"	f
 __isAssociativeArray	.bash_describe	/^__isAssociativeArray() {$/;"	f
 __printArrayDetails	.bash_array_functions	/^__printArrayDetails() {$/;"	f
 __printArrayDetails	.bash_describe	/^__printArrayDetails() {$/;"	f
-a	.bash_history	/^a() { echo dude; }$/;"	f
 array	.bash_array_functions	/^array() {$/;"	f
 array	.bash_describe	/^array() {$/;"	f
 arrays	.bash_array_functions	/^arrays() {$/;"	f
@@ -33,7 +32,6 @@ cF	.bash_cursor-movements	/^cF() { printf '\\033['"$1"'C'; } # n lines forward$/
 cS	.bash_cursor-movements	/^cS() { printf '\\033[2J'; } # Clear the screen$/;"	f
 cToXY	.bash_cursor-movements	/^cToXY() { printf '\\033['"${2}"\\;"${1}"f; } # If this doesn't work, try th alternate escape sequence by changing the ending 'f' to an 'H'$/;"	f
 cU	.bash_cursor-movements	/^cU() { printf '\\033['"$1"'A'; } # n lines up$/;"	f
-cd	.bash_cd	/^cd()$/;"	f
 cd	.bash_mark-system	/^cd ()$/;"	f
 cdDisplayHelp	.bash_mark-system	/^cdDisplayHelp() {$/;"	f
 cdStackAppend	.bash_mark-system	/^cdStackAppend ()$/;"	f
@@ -57,6 +55,7 @@ db	.bash_utility_functions	/^db() {$/;"	f
 dbFail	.bash_utility_functions	/^dbFail() {$/;"	f
 dbSuccess	.bash_utility_functions	/^dbSuccess() {$/;"	f
 dblv	.bash_utility_functions	/^dblv() {$/;"	f
+debugLog	.bash_utility_functions	/^debugLog() {$/;"	f
 debugStringItAlong	.bash_utility_functions	/^debugStringItAlong() {$/;"	f
 delm	.bash_mark-system	/^delm() {$/;"	f
 describe	.bash_describe	/^describe() {$/;"	f
@@ -64,78 +63,24 @@ describeAlias	.bash_describe	/^describeAlias() {$/;"	f
 describeAssociativeArray	.bash_describe	/^describeAssociativeArray() {$/;"	f
 describeBuiltin	.bash_describe	/^describeBuiltin() {$/;"	f
 describeExecutable	.bash_describe	/^describeExecutable() {$/;"	f
-describeForeignPackage	.bash_describe	/^describeForeignPackage() {$/;"	f
 describeFunction	.bash_describe	/^describeFunction() {$/;"	f
 describeIndexedArray	.bash_describe	/^describeIndexedArray() {$/;"	f
 describePackage	.bash_describe	/^describePackage() {$/;"	f
 describeVar	.bash_describe	/^describeVar() {$/;"	f
 existingArrayName	.bash_array_functions	/^existingArrayName() {$/;"	f
 existingArrayName	.bash_describe	/^existingArrayName() {$/;"	f
-f	.bash_history	/^f() { :; } $/;"	f
-f	.bash_history	/^f() { [ $1 -gt 5 ]; }$/;"	f
-f	.bash_history	/^f() { [[ $1 -gt 5 ]]; }$/;"	f
-f	.bash_history	/^f() { [[ -v FUNCNAME ]] && echo dude; }$/;"	f
-f	.bash_history	/^f() { [[ -v x ]]; }$/;"	f
-f	.bash_history	/^f() { a=(a b c d e f g); for i in {1..6}; do echo $(lpop a); array a; done; }$/;"	f
-f	.bash_history	/^f() { a=(a b c d e f g); for i in {1..6}; do lpop a; array a; done; }$/;"	f
-f	.bash_history	/^f() { break; }$/;"	f
-f	.bash_history	/^f() { db testing; }$/;"	f
-f	.bash_history	/^f() { dblv x y; }$/;"	f
-f	.bash_history	/^f() { echo $#; }$/;"	f
-f	.bash_history	/^f() { echo $FUNCNAME; }$/;"	f
-f	.bash_history	/^f() { echo 'hi mom!'; }$/;"	f
-f	.bash_history	/^f() { echo -e 'alpha\\nbeta\\ngama'; }$/;"	f
-f	.bash_history	/^f() { echo abc; }$/;"	f
-f	.bash_history	/^f() { echo dude; }$/;"	f
-f	.bash_history	/^f() { echo haha; }$/;"	f
-f	.bash_history	/^f() { exec ls; }$/;"	f
-f	.bash_history	/^f() { g; }$/;"	f
-f	.bash_history	/^f() { listArgsLong "$@"; }$/;"	f
-f	.bash_history	/^f() { listArgsLong; }$/;"	f
-f	.bash_history	/^f() { local _DOCSTRING="A Test docstring of awesome."; }$/;"	f
-f	.bash_history	/^f() { local aaaaaaa='a is for awesome'; declare -p; }$/;"	f
-f	.bash_history	/^f() { local aaaaaaa='a is for awesome'; listLocalVars; }$/;"	f
-f	.bash_history	/^f() { local aaaaaaa='a is for awesome'; local -p; }$/;"	f
-f	.bash_history	/^f() { local darray; mapfile -t darray < d; array darray }$/;"	f
-f	.bash_history	/^f() { local darray; mapfile -t darray < d; array darray; }$/;"	f
-f	.bash_history	/^f() { local darray; mapfile -t darray < d; }$/;"	f
-f	.bash_history	/^f() { local time; time=( a b c d ); array a; }$/;"	f
-f	.bash_history	/^f() { local time; time=( a b c d ); array time; }$/;"	f
-f	.bash_history	/^f() { local x; [[ -v x ]]; }$/;"	f
-f	.bash_history	/^f() { local x; g; describe x; }$/;"	f
-f	.bash_history	/^f() { local x=12; local -p; }$/;"	f
-f	.bash_history	/^f() { local x=12; locals -p; }$/;"	f
-f	.bash_history	/^f() { mapfile -t darray < d; }$/;"	f
-f	.bash_history	/^f() { mapfile darray < d; }$/;"	f
-f	.bash_history	/^f() { stackTrace; }$/;"	f
-f	.bash_history	/^f() { stacktrace; }$/;"	f
-f	.bash_history	/^f() { unset f; echo ive removed myself; }$/;"	f
-f	.bash_history	/^f() { while read line; do x=25; done <<< 'hi there'; }$/;"	f
-f	.bash_history	/^f() { x+=(a b c); x+=(d e f); }$/;"	f
 findAudioPlayer	.bash_utility_functions	/^findAudioPlayer() {$/;"	f
 functionTracingDebug	.bash_describe	/^functionTracingDebug() {$/;"	f
 functionTracingDebug	.bash_utility_functions	/^functionTracingDebug() {$/;"	f
-functions	.bash_history	/^functions ()     {         local _DOCSTRING="Lists the functions defined in the current environment.";         local _USAGE="Usage: functions ";         functionTracingDebug "$@";         local line func extdebugSave arg filter message;         extdebugSave="$(shopt -p extdebug)";         for arg in "$@";         do             case "$arg" in                 -a | --all)                     filter='cat';                     message='Functions:';                 ;;             esac;         done;         filter="${filter:-grep -v ^_}";         message="${message:-NOTICE: Private namespace hidden. Show with --all.}";         echo "$message";         shopt -s extdebug;         while read -r line; do             func="$(echo "$line" | cut -d' ' -f 3-)";             declare -F "$func";         done < <(declare -F) | column -t | sort -k3 | $filter | less;         $extdebugSave;     }$/;"	f
 functions	.bash_utility_functions	/^functions() {$/;"	f
-funtime	.bash_history	/^funtime() { echo dude; }$/;"	f
-g	.bash_history	/^g() { echo in g; cat; } $/;"	f
-g	.bash_history	/^g() { h; }$/;"	f
-g	.bash_history	/^g() { local x=55; f; }$/;"	f
-g	.bash_history	/^g() { local y=50; f; }$/;"	f
-g	.bash_history	/^g() { x=5;}$/;"	f
+functrace	.bash_utility_functions	/^functrace() {$/;"	f
 gc	.bash_git-helper-functions	/^gc() {$/;"	f
 generateExitStatus	.bash_dynamic_prompt_functions	/^generateExitStatus() {$/;"	f
 generatePrompt	.bash_dynamic_prompt_functions	/^generatePrompt() {$/;"	f
 getDocstring	.bash_utility_functions	/^getDocstring() {$/;"	f
 grepall	.bash_functions	/^grepall () { find . -type f -exec grep -H "$@" '{}' \\; ; } $/;"	f
-h	.bash_history	/^h() { caller 0; }$/;"	f
-h	.bash_history	/^h() { caller 1; }$/;"	f
-h	.bash_history	/^h() { caller 2; }$/;"	f
-h	.bash_history	/^h() { caller; }$/;"	f
-h	.bash_history	/^h() { stackTrace; }$/;"	f
 highlightSearchTerm	.bash_utility_functions	/^highlightSearchTerm() {$/;"	f
-inarray	.bash_history	/^inarray() { local n=$1 h; shift; for h; do [[ $n = "$h" ]] && return; done; }$/;"	f
-inarray	.bash_history	/^inarray() { local n=$1 h; shift; for h; do [[ $n = "$h" ]] && return; done; }; inarray a b c d e || echo it is redundant$/;"	f
+imports	.bash_utility_functions	/^imports() {$/;"	f
 indentIt	.bash_describe	/^indentIt() {$/;"	f
 indentIt	.bash_utility_functions	/^indentIt() {$/;"	f
 invisableCursor	.bash_cursor-movements	/^invisableCursor() { printf '\\033[?25l'; }$/;"	f
@@ -145,7 +90,6 @@ isAscii	.bash_describe	/^isAscii() {$/;"	f
 isAssociativeArray	.bash_describe	/^isAssociativeArray() {$/;"	f
 isBuiltin	.bash_describe	/^isBuiltin() {$/;"	f
 isExecutable	.bash_describe	/^isExecutable() {$/;"	f
-isForeignPackage	.bash_describe	/^isForeignPackage() {$/;"	f
 isFunction	.bash_describe	/^isFunction() {$/;"	f
 isIndexedArray	.bash_describe	/^isIndexedArray() {$/;"	f
 isItTimeToThrowAParty	.bash_dynamic_prompt_functions	/^isItTimeToThrowAParty() {$/;"	f
@@ -158,6 +102,7 @@ latestFile	.bash_utility_functions	/^latestFile() {$/;"	f
 latestFileInDir	.bash_functions	/^latestFileInDir() {$/;"	f
 latestFileInDir	.bash_utility_functions	/^latestFileInDir() {$/;"	f
 lengthOfLongestLine	.bash_utility_functions	/^lengthOfLongestLine() {$/;"	f
+listArgs	.bash_describe	/^listArgs() {$/;"	f
 listArgs	.bash_utility_functions	/^listArgs() {$/;"	f
 listArgsLong	.bash_utility_functions	/^listArgsLong() {$/;"	f
 listDaysOfMonth	.bash_utility_functions	/^listDaysOfMonth() {$/;"	f
@@ -170,35 +115,31 @@ m	.bash_mark-system	/^m ()$/;"	f
 max	.bash_utility_functions	/^max() {$/;"	f
 maxKeyLength	.bash_array_functions	/^maxKeyLength() {$/;"	f
 maxValueLength	.bash_array_functions	/^maxValueLength() {$/;"	f
-mess	.bash_history	/^mess() { READLINE="echo awesome"; }$/;"	f
-mess	.bash_history	/^mess() { READLINE_LINE="echo awesome"; }$/;"	f
-mess	.bash_history	/^mess() { READLINE_LINE="echo awesome; $READLINE_LINE" ;}$/;"	f
-mess	.bash_history	/^mess() { READLINE_LINE="echo awesome; $READLINE_LINE"; }$/;"	f
-mess	.bash_history	/^mess() { echo dude;}$/;"	f
-mess	.bash_history	/^mess() { listArgsLong "$@"; }$/;"	f
-mess	.bash_history	/^mess() { listArgsLong $READLINE_LINE; eval $READLINE_LINE }$/;"	f
-mess	.bash_history	/^mess() { listArgsLong $READLINE_LINE; eval $READLINE_LINE; READLINE=; }$/;"	f
-mess	.bash_history	/^mess() { listArgsLong $READLINE_LINE; eval $READLINE_LINE; }$/;"	f
-mess	.bash_history	/^mess() { listArgsLong $READLINE_LINE; }$/;"	f
 middlePadStrings	.bash_utility_functions	/^middlePadStrings() {$/;"	f
 min	.bash_utility_functions	/^min() {$/;"	f
 minimumArguments	.bash_describe	/^minimumArguments() {$/;"	f
 minimumArguments	.bash_utility_functions	/^minimumArguments() {$/;"	f
+mkcd	.bash_utility_functions	/^mkcd() {$/;"	f
 mostRecentlyModifiedDirectory	.bash_utility_functions	/^mostRecentlyModifiedDirectory() {$/;"	f
+myfunc	.bash_utility_functions	/^						      myfunc() {$/;"	f
 newestFileInDir	.bash_utility_functions	/^newestFileInDir() {$/;"	f
 numberOfFilesInDir	.bash_utility_functions	/^numberOfFilesInDir() {$/;"	f
 numberOfSubvols	.bash_utility_functions	/^numberOfSubvols() {$/;"	f
 numberOfsubDirs	.bash_utility_functions	/^numberOfsubDirs() {$/;"	f
 oldestFileInDir	.bash_utility_functions	/^oldestFileInDir() {$/;"	f
 oldestSnapshotInDir	.bash_utility_functions	/^oldestSnapshotInDir() {$/;"	f
+packageIsInstalled	.bash_describe	/^packageIsInstalled() {$/;"	f
 pbg	.bash_functions	/^pbg () { curl -s "$1" ; }$/;"	f
 pbp	.bash_functions	/^pbp () { curl -s -F 'sprunge=<-' http:\/\/sprunge.us ; }$/;"	f
 pop	.bash_array_functions	/^pop() {$/;"	f
 printSuperbootsInfoBar	.bashrc	/^printSuperbootsInfoBar ()$/;"	f
 printWelcomeHome	.bash_dynamic_prompt_functions	/^printWelcomeHome() {$/;"	f
+queryDB	.bash_describe	/^queryDB() {$/;"	f
+raiseError	.bash_describe	/^raiseError() {$/;"	f
 raiseError	.bash_utility_functions	/^raiseError() {$/;"	f
 raiseErrorAndExit	.bash_utility_functions	/^raiseErrorAndExit() {$/;"	f
 readInput	.bash_utility_functions	/^readInput() {$/;"	f
+regularWritable	.bash_utility_functions	/^regularWritable() {$/;"	f
 repeatString	.bash_describe	/^repeatString() {$/;"	f
 repeatString	.bash_utility_functions	/^repeatString() {$/;"	f
 repl	.bash_repl	/^repl() {$/;"	f
@@ -208,12 +149,12 @@ rn	.bash_functions	/^rn() {$/;"	f
 rp	.bash_functions	/^rp () { randomPrefix=0; until [[ $randomPrefix -gt 100 ]]; do randomPrefix=$(( RANDOM % 1000)); done; echo $randomPrefix ; }$/;"	f
 runInBackground	.bash_utility_functions	/^runInBackground() {$/;"	f
 saveCursorPosition	.bash_cursor-movements	/^saveCursorPosition() { printf '\\033[s'; }$/;"	f
-sayHiMom	.bash_history	/^sayHiMom() { echo hi mom; }$/;"	f
 setColors	.bash_describe	/^setColors() {$/;"	f
 setColors	.bash_utility_functions	/^setColors() {$/;"	f
 setSyntaxHighlighter	.bash_describe	/^setSyntaxHighlighter() {$/;"	f
 setSyntaxHighlighter	.bash_utility_functions	/^setSyntaxHighlighter() {$/;"	f
 showVars	.bash_env_functions	/^showVars() {$/;"	f
+showme	.bash_utility_functions	/^showme() {$/;"	f
 sortu	.bash_functions	/^sortu() { sort -d | uniq -u; }$/;"	f
 spaceToDash	.bash_utility_functions	/^spaceToDash() {$/;"	f
 spop	.bash_array_functions	/^spop() {$/;"	f
@@ -234,12 +175,4 @@ visableCursor	.bash_cursor-movements	/^visableCursor() {  printf '\\033[?25h'; }
 warning	.bash_utility_functions	/^warning() {$/;"	f
 weAreInBDB	.bash_repl	/^weAreInBDB() {$/;"	f
 weAreRunningX	.bash_utility_functions	/^weAreRunningX() {$/;"	f
-x	.bash_history	/^x() { echo "hello Mom!"; }$/;"	f
-x	.bash_history	/^x() { echo 'hello mom!'; }$/;"	f
-x	.bash_history	/^x() { echo function; }$/;"	f
-x	.bash_history	/^x() { echo strange; }$/;"	f
-x	.bash_history	/^x() { echo stupid that you can have a function named the same as a variable.; }$/;"	f
-x	.bash_history	/^x() { for i in a b c d; do [[ "$i" == "$1" ]] && return 0; done; }$/;"	f
-x	.bash_history	/^x() { for i in a b c d; do [[ "$i" == "$1" ]] && return 0; }$/;"	f
-x	.bash_history	/^x() {echo function; }$/;"	f
 yesNo	.bash_utility_functions	/^yesNo() {$/;"	f

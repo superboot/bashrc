@@ -473,9 +473,9 @@ highlightSearchTerm() {
 # ↑↑↑ END highlightSearchTerm
 # ↓↓↓ def command_not_found_handle()
 command_not_found_handle() { 
-    if describe "$@"; then
-        return $?
-    fi
+    #if describe "$@"; then
+        #return $?
+    #fi
 
     if [ -x /usr/lib/command-not-found ]; then
         /usr/lib/command-not-found -- "$1";
@@ -773,7 +773,10 @@ basename() {
     local bn
     bn='/usr/bin/basename'
     if [[ $# -lt 1 ]]; then
-        $bn $(cat -) # Read from stdin.
+        while read filename
+        do
+            "$bn" "$filename"
+        done < <(cat | tr -s ' ' | tr ' ' '\n')
     else
         $bn "$@"
     fi
