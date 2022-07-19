@@ -143,7 +143,7 @@ export PYENV_ROOT="$HOME/.pyenv"
 # ↑↑↑ END PYENV
 # ↓↓↓ PATH EXPORTS
 # Add to path:
-export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:~/bin:~/bin/ssh:~/bin/irc:~/bin/cc:~/bin/keyboard:$HOME/local/bin:$HOME/.local/bin"
+export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:$HOME/bin:$HOME/local/bin:$HOME/.local/bin"
 # ↑↑↑ END PATH EXPORTS
 # ↓↓↓ FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # Dissable ctrl-s's binding to flowcontrol's "stop"
