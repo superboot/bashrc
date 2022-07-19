@@ -15,7 +15,9 @@ functionTracingDebug() {
     local _DOCSTRING="Logs information about the function call this function was called from."
     local _USAGE="Usage: functionTracingDebug [logfile="$debugLog"] <message>"
 
-    local logfile args indent depth callingFunction fourSpaces
+    # Locals
+    local logfile args indent depth callingFunction callerOfCaller calledByString
+    local definedInSourceFile callingLineNumber calledInSourceFile
 
     if [[ ! -v funcTrace ]]; then # Are we enabled?
         return 0
@@ -29,15 +31,29 @@ functionTracingDebug() {
     fi
 
     args=( "$@" )
-    depth="$(( ${#FUNCNAME[*]} - 1 ))"
-    callingFunction="${FUNCNAME[1]}"
-    fourSpaces='    '
-    for level in "$(seq "$depth")"
-    do
-        indent="$indent$fourSpaces"
-    done
 
-    printf "[$depth]${indent}Entering $red$callingFunction$normal with args: $(listArgsLong $@)\n" >> "$logfile" # The funclist piece says what depth level we are at.
+    # Check for recursive calls of this function
+    for (( funcNumber = 1; funcNumber < ${#FUNCNAME[@]}; funcNumber++ ))  # For each function in the call stack other than ourselves
+    do
+        funcName="${FUNCNAME[$funcNumber]}"
+        if [[ "$funcName" == 'functionTracingDebug' ]]; then # If that name is our name, aka, we've been called by something that was called by us
+            return 0 # Just return because it is recursive otherwise.
+        fi
+    done
+    
+    # Callers
+    callingFunction="${FUNCNAME[1]}"
+    if [[ "${FUNCNAME[2]}" != '' ]]; then # If the calling function was called by a function
+        callerOfCaller="${FUNCNAME[2]}"
+        calledByString=" Called by: $blue$callerOfCaller$normal"
+    fi
+
+    # Calling function source
+    depth="$(( ${#FUNCNAME[*]} - 1 ))"
+    definedInSourceFile="${BASH_SOURCE[1]}"
+
+    # Output
+    printf "[Depth: $depth] Entering ${red}${callingFunction}${normal}$calledByString\nDefined in: $definedInSourceFile\n$(listArgsLong $@)\n\n" | indentIt "$depth" >> "$logfile"
 }
 # ↑↑↑ END functionTracingDebug
 # ↓↓↓ def raiseError() 
@@ -296,7 +312,7 @@ repeatString() {
 
     local NOTUSED returnValue
     
-    for NOTUSED in $(seq "$n")
+    for (( NOTUSED = 1; NOTUSED <= n; NOTUSED++ )) 
     do
         returnValue="$returnValue$string"
     done

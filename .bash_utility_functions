@@ -216,7 +216,7 @@ functionTracingDebug() {
     args=( "$@" )
 
     # Check for recursive calls of this function
-    for funcNumber in $(seq 1 $((${#FUNCNAME[@]} - 1 )) )  # For each function in the call stack other than ourselves
+    for (( funcNumber = 1; funcNumber < ${#FUNCNAME[@]}; funcNumber++ ))  # For each function in the call stack other than ourselves
     do
         funcName="${FUNCNAME[$funcNumber]}"
         if [[ "$funcName" == 'functionTracingDebug' ]]; then # If that name is our name, aka, we've been called by something that was called by us
@@ -656,7 +656,7 @@ repeatString() {
 
     local NOTUSED returnValue
     
-    for NOTUSED in $(seq "$n")
+    for (( NOTUSED = 1; NOTUSED <= n; NOTUSED++ )) 
     do
         returnValue="$returnValue$string"
     done
