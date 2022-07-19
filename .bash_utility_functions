@@ -260,11 +260,11 @@ functrace() {
     while [[ "$#" -gt 0 ]]
     do
         case "$1" in
-            y|Y|yes|YES|on|On|ON)
+            [yY]|yes|YES|on|On|ON)
                 local arg_on=true
                 shift
                 ;;
-            n|N|no|NO|f|F|off|OFF)
+            [nN]|no|NO|[fF]|off|OFF)
                 local arg_off=true
                 shift
                 ;;
@@ -296,7 +296,7 @@ functrace() {
 						
 						    Options: 
 						      -h, --help          List this help screen.
-						      -l, --log           Prints the path to the current log file.
+						      -l, --log [/path]   Prints the path to the current log file.
 						                            If given a path argument, sets the log
 						                            file for this environment and subshells.
 						      -c, --clear         Empty the logfile (optionally specified on the same commandline)
