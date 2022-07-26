@@ -138,7 +138,7 @@ maxKeyLength() {
     maxlen=0
     declare -n namerefToArray="$subjectArray" # Create a nameref pointing at the array, so we can expand it.
     if existingArrayName "$subjectArray"; then # If the subjectArray is the name of an existing array.
-        for val in "${!namerefToArray[@]}" # For each element in the array.
+        for val in "${!namerefToArray[@]}" # For each key in the array.
         do
             lenOfKey="${#val}"
             (( lenOfKey > maxlen )) && maxlen="$lenOfKey" # Update the max value.
@@ -195,6 +195,36 @@ lpop() {
     _lpopReturn="$returnValue" # Pick up this value.
 }
 # ↑↑↑ END lpop
+# Existence introspection
+# ↓↓↓ def inArray()
+inArray() {
+    local _DOCSTRING="checks if <value> is in <array>, returning bool."
+    local _USAGE="Usage: inArray <value> <array>"
+    functionTracingDebug "$@"
+
+    local  value array
+    minimumArguments 2 "$@" || return 3
+    value="$1"
+    array="$2"
+
+    local val
+
+    declare -n namerefToArray="$array" # Create a nameref pointing at the array, so we can expand it.
+    if existingArrayName "$array"; then # If the subjectArray is the name of an existing array.
+        for val in "${namerefToArray[@]}" # For each element in the array.
+        do
+            if [[ "$val" == "$value" ]]; then # If the val of the current element equals the value being searched for
+                return 0
+            fi
+        done
+        return 1 # We didn't find a match
+    fi
+    return 1 # We didn't get the name of a real array.
+    
+    
+}
+# ↑↑↑ END inArray
+
 
 
 

@@ -654,13 +654,10 @@ repeatString() {
     string=$1
     n=$2
 
-    local NOTUSED returnValue
+    local returnValue
     
-    for (( NOTUSED = 1; NOTUSED <= n; NOTUSED++ )) 
-    do
-        returnValue="$returnValue$string"
-    done
-    printf '%s' "$returnValue"
+    printf -v returnValue '%*s' "$n"
+    printf '%s\n' "${returnValue// /$string}"
 }
 # ↑↑↑ END repeatString
 # ↓↓↓ def centerStringInString()
