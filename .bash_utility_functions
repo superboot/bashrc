@@ -356,7 +356,7 @@ functrace() {
 
         # [off]
         if [[ -v arg_off ]]; then
-            unset funcTrace=true
+            unset funcTrace
         fi
     done
 }
@@ -864,6 +864,18 @@ vars() {
     declare -p | grep '^declare -[-aAx] '
 }
 # ↑↑↑ END vars
+# ↓↓↓ def locals()
+locals() {
+    local locals_assignment locals_k locals_v
+    local -p | while read -r locals_assignment
+    do
+        locals_k="${locals_assignment%%=*}"
+        locals_v="${locals_assignment#*=}"
+        listVarsLong locals_k locals_v locals_assignment
+        echo "    [$locals_k]  |-->  \"$locals_v\"" # Echo an indented key and value pair: [key]  -->  "value"
+    done | column -t -s '|' 
+}
+# ↑↑↑ END locals
 # ↓↓↓ def listVars()
 listVars() {
     local _DOCSTRING="Pretty print the name and value of each variable name supplied in a single line."

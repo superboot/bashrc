@@ -57,6 +57,9 @@ fi
 # Import the completions for custom scripts.
 . $HOME/.bash/.bash_completions
 # ↑↑↑2 END COMPLETIONS FOR CUSTOM SCRIPTS
+# ↓↓↓ ALPHABET NUMBER
+. "$HOME/.bash/.bash_alphabet"
+# ↑↑↑ END ALPHABET NUMBER
 # ↑↑↑1 END IMPORTS
 # ↓↓↓ COLOR VARIABLES SETUP
 setColors # Setup the color variables for printing in color.
@@ -135,9 +138,6 @@ export RANGER_LOAD_DEFAULT_RC=FALSE
 #MAIL=/var/spool/mail/john && export MAIL
 #MAILPATH=/var/spool/mail/john && export MAILPATH
 # ↑↑↑ END EXPORTED ENVIRONMENT VARIABLES 
-# ↓↓↓ FBTERM CHECK
-[ -n "$FBTERM" ] && export TERM=fbter
-# ↑↑↑ END FBTERM CHECK
 # ↓↓↓ PYENV
 export PYENV_ROOT="$HOME/.pyenv"
 # ↑↑↑ END PYENV

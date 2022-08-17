@@ -1,3 +1,4 @@
 # Networking
 alias whatports='lsof -Pni4 | grep LISTEN'
 alias wic="wicd-curses"
+alias vpn='protonvpn-cli'

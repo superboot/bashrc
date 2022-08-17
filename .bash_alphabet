@@ -1,0 +1,43 @@
+# Create letter to number in alphabet array.
+declare -A letterToAlphabetNumberArray
+c=1
+for letter in {a..z}
+do
+    letterToAlphabetNumberArray["$letter"]="$c"
+    ((c++))
+done
+unset letter c
+
+# And the reverse:
+alphabetNumberToLetterArray=( 0 {a..z} )
+
+# ↓↓↓ def alphabetNumberToLetter()
+alphabetNumberToLetter() {
+    local _DOCSTRING="Returns the Nth letter of the alphabet."
+    local _USAGE="Usage: alphabetNumberToLetter <N>"
+    functionTracingDebug "$@"
+
+    local  N
+    minimumArguments 1 "$@" || return 3
+    N="$1"
+
+    [[ "$N" -gt 0 ]]  && [[ "$N" -lt 27 ]] && echo "${alphabetNumberToLetterArray["$N"]}" || return 1
+}
+# ↑↑↑ END alphabetNumberToLetter
+
+# ↓↓↓ def letterToAlphabetNumber()
+letterToAlphabetNumber() {
+    local _DOCSTRING="Returns the index of the given letter in the alphabet."
+    local _USAGE="Usage: letterToAlphabetNumber <letter>"
+    functionTracingDebug "$@"
+
+    local  letter
+    minimumArguments 1 "$@" || return 3
+    letter="$1"
+
+    [[ "$letter" == [a-z] ]] && echo "${letterToAlphabetNumberArray["$letter"]}" || return 1
+    
+}
+# ↑↑↑ END letterToAlphabetNumber
+
+

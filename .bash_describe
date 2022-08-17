@@ -341,10 +341,10 @@ indentIt() {
 # ↑↑↑ END indentIt
 
 # Packages
-# ↓↓↓ def queryDB()
-queryDB() {
-    local _DOCSTRING="Query the package DB from the command_not_found package."
-    local _USAGE="Usage: queryDB <query>"
+# ↓↓↓ def queryDescribeDB()
+queryDescribeDB() {
+    local _DOCSTRING="Query describe's package DB from the command_not_found package."
+    local _USAGE="Usage: queryDescribeDB <query>"
     functionTracingDebug "$@"
 
     local  query
@@ -355,7 +355,7 @@ queryDB() {
 
     sqlite3 "$packageDB" "$query" 2>/dev/null
 }
-# ↑↑↑ END queryDB
+# ↑↑↑ END queryDescribeDB
 # ↓↓↓ def packageIsInstalled()
 packageIsInstalled() {
     local _DOCSTRING="Returns true/false if the package is/not installed."
@@ -540,7 +540,7 @@ isPackage() {
     
     local response
 
-    response="$(queryDB "SELECT name FROM packages WHERE name IS \"$name\"")"
+    response="$(queryDescribeDB "SELECT name FROM packages WHERE name IS \"$name\"")"
 
     [[ "$response" == "$name" ]] && return 0 || return 1
 }
