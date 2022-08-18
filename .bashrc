@@ -99,7 +99,7 @@ PROMPT_COMMAND='history -a; printSuperbootsInfoBar'
 # ↓↓↓ PROMPT (PS1)
 #PS1='|$(echo $?)|$(date +%I:%M:%S)|\u@\h:\w🥛 '
 # Move the prompt to alt-j for access when we want it.
-PS1='[$(generateExitStatus $?)]$ ' # Let's keep things simple here.  If you want the prompt hit alt-h.
+PS1='[$(generateExitStatus $?)]\$ ' # Let's keep things simple here.  If you want the prompt hit alt-h.
 # ↑↑↑ END PROMPT (PS1)
 # ↓↓↓1 PROMPT FUNCTION printSuperbootsInfoBar()
 printSuperbootsInfoBar ()
