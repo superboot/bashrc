@@ -2,7 +2,6 @@
 . $HOME/.bash/.bash_constants # A list of constants tuo have in theenv
 . $HOME/.bash/.bash_array_functions # Import the array functions.
 . $HOME/.bash/.bash_env_functions # The environment interrogation functions.
-. $HOME/.bash/.bash_describe # The describe suite.
 
 
 # Related global vars.
@@ -1341,5 +1340,6 @@ mkcd() {
 }
 # ↑↑↑ END mkcd
 
+. $HOME/.bash/.bash_describe # The describe suite.
 
 _importsArray[utility_functions]="$(( ${_importsArray[utility_functions]} + 1 ))"
