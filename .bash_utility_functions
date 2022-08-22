@@ -225,7 +225,7 @@ functionTracingDebug() {
     
     # Callers
     callingFunction="${FUNCNAME[1]}"
-    if [[ "${FUNCNAME[2]}" != '' ]]; then # If the calling function was called by a function
+    if [[ -v FUNCNAME[2] ]]; then # If the calling function was called by a function
         callerOfCaller="${FUNCNAME[2]}"
         calledByString=" Called by: $blue$callerOfCaller$normal"
     fi
