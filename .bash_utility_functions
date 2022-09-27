@@ -503,8 +503,10 @@ showme() {
 
     patterns[removeInlineOctothorpComments]='  s/#.*$//g'
     patterns[removeInlinePercentComments]='    s/%.*$//g'
+    patterns[removeInLineJavaComments]='       s/ \/\/.*//g'
     patterns[removeOctothorpCommentLines]='     /^#.*$/d'
     patterns[removePercentCommentLines]='       /^%.*$/d'
+    patterns[removeJavaCommentLines]='          /^ *\/\//d'
     patterns[removeWhitespaceOnlyLines]='       /^[\t ]*$/d'
     patterns[removeBlankLines]='                /^$/d'
 
