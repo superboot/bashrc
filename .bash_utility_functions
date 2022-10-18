@@ -235,7 +235,7 @@ functionTracingDebug() {
     definedInSourceFile="${BASH_SOURCE[1]}"
 
     # Output
-    printf "[Depth: $depth] Entering ${red}${callingFunction}${normal}$calledByString\nDefined in: $definedInSourceFile\n$(listArgsLong $@)\n\n" | indentIt "$depth" >> "$logfile"
+    printf "[Depth: $depth] Entering ${red}${callingFunction}${normal}$calledByString\nDefined in: $definedInSourceFile\n$(listArgsLong "$@")\n\n" | indentIt "$depth" >> "$logfile"
 }
 # ↑↑↑ END functionTracingDebug
 # ↓↓↓ def functrace()
