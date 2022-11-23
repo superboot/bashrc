@@ -1359,6 +1359,23 @@ mkcd() {
 }
 # ↑↑↑ END mkcd
 
+# Finding help
+# ↓↓↓ def webSearch()
+webSearch() {
+    local _DOCSTRING="Do a web search for the arguments in Elinks."
+    local _USAGE="Usage:  "
+    functionTracingDebug "$@"
+
+    local search="$*"
+
+    local encoded="$(python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$search")"
+
+    elinks "https://lite.duckduckgo.com/lite/?q=$encoded"
+}
+alias ?=webSearch
+# ↑↑↑ END webSearch
+
+
 . $HOME/.bash/.bash_describe # The describe suite.
 
 _importsArray[utility_functions]="$(( ${_importsArray[utility_functions]} + 1 ))"
