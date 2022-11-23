@@ -19,6 +19,9 @@ declare -A _importsArray
 # ↓↓↓2 GIT
 . "$HOME/.bash/.bash_git-helper-functions"
 # ↑↑↑2 END GIT
+# ↓↓↓2 DOCKER
+. "$HOME/.bash/.bash_docker-helper-functions"
+# ↑↑↑2 END DOCKER
 # ↓↓↓2 UTILITY FUNCTIONS
 if [[ ! -v IMPORTED_UTILITIES_SUCCESS ]]; # If we haven't imported it yet, import it, but only once.
 then

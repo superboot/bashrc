@@ -224,6 +224,32 @@ inArray() {
     
 }
 # ↑↑↑ END inArray
+# ↓↓↓ def keyInArray()
+keyInArray() {
+    local _DOCSTRING="checks if <value> is a key in <array>, returning bool."
+    local _USAGE="Usage: keyInArray <value> <array>"
+    functionTracingDebug "$@"
+
+    local  value array
+    minimumArguments 2 "$@" || return 3
+    value="$1"
+    array="$2"
+
+    local key
+
+    declare -n namerefToArray="$array" # Create a nameref pointing at the array, so we can expand it.
+    if existingArrayName "$array"; then # If the subjectArray is the name of an existing array.
+        for key in "${!namerefToArray[@]}" # For each element in the array.
+        do
+            if [[ "$key" == "$value" ]]; then # If the val of the current element equals the value being searched for
+                return 0
+            fi
+        done
+        return 1 # We didn't find a match
+    fi
+    return 1 # We didn't get the name of a real array.
+}
+# ↑↑↑ END keyInArray
 
 
 

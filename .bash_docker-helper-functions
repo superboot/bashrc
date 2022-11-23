@@ -1,0 +1,31 @@
+# ↓↓↓ def list-containers()
+list-containers() {
+    local _DOCSTRING="List all docker containers, across all status levels."
+    local _USAGE="Usage: list-containers "
+    functionTracingDebug "$@"
+
+
+    echo "${liabilityPink}Created$normal:"
+    docker container ls --filter status=created | indentIt 1
+
+    echo "${green}Running$normal:"
+    docker container ls --filter status=running | indentIt 1
+
+    echo "${yellow}Paused$normal:"
+    docker container ls --filter status=paused | indentIt 1
+
+    echo "${dodgerBlue}Restarting$normal:"
+    docker container ls --filter status=restarting | indentIt 1
+
+    echo "${princePurple}Exited$normal:"
+    docker container ls --filter status=exited | indentIt 1
+
+    echo "${red}Dead$normal:"
+    docker container ls --filter status=dead | indentIt 1
+
+    echo "${alertRed}Removing$normal:"
+    docker container ls --filter status=removing | indentIt 1
+}
+# ↑↑↑ END list-containers
+
+

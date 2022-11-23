@@ -439,6 +439,23 @@ setColors() {
 }
 
 # ↑↑↑ END setColors
+# ↓↓↓ def showColors()
+showColors() {
+    local _DOCSTRING="Shows a preview of all the color definitions available (hard coded)."
+    local _USAGE="Usage: showColors "
+    functionTracingDebug "$@"
+
+    for color in red alertRed rustyRed seriouslyRed liabilityPink green aquaMarine cvagDark cvagMed cvagLight cvagLightest yellow peach warmOrange travexOrange lemon taxexYellow blue blueMidnight dodgerBlue fancyBlue slsbDark slsbMed slsbLight slsbLightest purple princePurpleDarkest princePurpleDark princePurple princePurpleLight powder boldOrange sunFlower tinGray cyan bold 
+    do
+        declare -n nameRef=$color
+        echo "$nameRef$color$normal"
+        unset nameRef
+    done
+
+    echo $normal
+}
+# ↑↑↑ END showColors
+
 # ↓↓↓ def highlightSearchTerm()
 highlightSearchTerm() {
     ## Highlights the search $term in the $string and returns the modified string.
