@@ -63,6 +63,9 @@ fi
 # ↓↓↓ ALPHABET NUMBER
 . "$HOME/.bash/.bash_alphabet"
 # ↑↑↑ END ALPHABET NUMBER
+# ↓↓↓ GOLANG
+. "$HOME/.bash/.bash_go-config"
+# ↑↑↑ END GOLANG
 # ↑↑↑1 END IMPORTS
 # ↓↓↓ COLOR VARIABLES SETUP
 setColors # Setup the color variables for printing in color.
