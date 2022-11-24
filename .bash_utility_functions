@@ -515,6 +515,8 @@ showme() {
 
     local file="$1"
 
+    local arg
+
     declare -A patterns
     declare -a sedArgs
 
@@ -536,7 +538,10 @@ showme() {
     if [[ "$file" == '' ]]; then # We didn't get a file argument.
         cat | sed "${sedArgs[@]}" | less
     else
-        sed "${sedArgs[@]}" "$file" | less
+        for arg in "$@"
+        do
+            sed "${sedArgs[@]}" "$arg" 
+        done | less
     fi
 }
 # ↑↑↑ END showme
