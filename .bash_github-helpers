@@ -1,0 +1,2 @@
+# Add tab completion for bash.
+eval "$(gh completion -s bash)"

@@ -18,6 +18,7 @@ declare -A _importsArray
 # ↑↑↑2 END OLD FUNCTIONS
 # ↓↓↓2 GIT
 . "$HOME/.bash/.bash_git-helper-functions"
+. "$HOME/.bash/.bash_github-helpers"
 # ↑↑↑2 END GIT
 # ↓↓↓2 DOCKER
 . "$HOME/.bash/.bash_docker-helper-functions"
