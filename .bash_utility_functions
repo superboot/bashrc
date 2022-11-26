@@ -1368,36 +1368,36 @@ mkcd() {
 # ↓↓↓ def webSearch()
 webSearch() {
     local _DOCSTRING="Do a web search for the arguments in Elinks."
-    local _USAGE="Usage: <search>"
+    local _USAGE="Usage: <engine> <search>"
     functionTracingDebug "$@"
 
-    local  search
-    minimumArguments 1 "$@" || return 3
+    local  engine search encoded url
+    minimumArguments 2 "$@" || return 3
+    engine="$1"
+    shift
     search="$*"
 
-    local encoded="$(python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$search")"
+    encoded="$(python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$search")"
 
-    elinks "https://lite.duckduckgo.com/lite/?q=$encoded"
+    case "$engine" in
+        duck|duckduck|duckduckgo)
+            url="https://lite.duckduckgo.com/lite/?q=$encoded"
+            ;;
+        wikipedia)
+            url="http://en.wikipedia.org/w/wiki.phtml?search=$encoded"
+            ;;
+        stackoverflow|so)
+            url="https://stackoverflow.com/search?q=$encoded"
+            ;;
+    esac
+
+    elinks "$url"
 }
-alias ?=webSearch
+alias ?='webSearch duck'
+alias ??='webSearch wikipedia'
+alias ?w='webSearch wikipedia'
+alias ?so='webSearch stackoverflow'
 # ↑↑↑ END webSearch
-# ↓↓↓ def wikiSearch()
-wikiSearch() {
-    local _DOCSTRING="Search wikipedia with elinks."
-    local _USAGE="Usage: wikiSearch <search>"
-    functionTracingDebug "$@"
-
-    local  search
-    minimumArguments 1 "$@" || return 3
-    search="$*"
-    
-    local encoded="$(python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$search")"
-
-    elinks "http://en.wikipedia.org/w/wiki.phtml?search=$encoded"
-}
-alias ??=wikiSearch
-# ↑↑↑ END wikiSearch
-
 
 
 . $HOME/.bash/.bash_describe # The describe suite.
