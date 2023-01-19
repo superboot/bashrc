@@ -295,6 +295,16 @@ cdDisplayHelp() {
     cd ..
 }
 # ↑↑↑ END ..
+# ↓↓↓ def cdToParent()
+cdToParent() {
+    local _DOCSTRING="Change the working directory to the parent directory, and print the prompt."
+    local _USAGE="Usage: cdToParent "
+    functionTracingDebug "$@"
+
+    cd ..
+    printSuperbootsInfoBar
+}
+# ↑↑↑ END cdToParent
 
 
 
@@ -480,6 +490,8 @@ bind -x '"\eo":cdStackBackward' # Bind Alt-o to move backward in the stack.
 bind -r '"\ep"' # clear any binding for Alt-p
 bind -x '"\ep":cdStackPrintStack' # Bind Alt-p to print the stack.
 bind -x '"\eP":cdStackPrintStackLong' # Bind Alt-p to print the stack.
+bind -r '"\eu"' # clear any binding for Alt-p
+bind -x '"\eu":cdToParent' # Bind alt-u to go up one directory.
 
 # Start the stack off with the current PWD
 ## This is only run when this file is sourced by .bashrc (so, once per terminal/bash session/etc.)
