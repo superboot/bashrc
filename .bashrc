@@ -69,7 +69,7 @@ fi
 # ↑↑↑ END GOLANG
 # ↑↑↑1 END IMPORTS
 # ↓↓↓ COLOR VARIABLES SETUP
-setColors # Setup the color variables for printing in color.
+setColors # Setup the color variables for printing in color. Depends on .bash_utility_functions
 # ↑↑↑ END COLOR VARIABLES SETUP
 # HISTORY CONTROLS ↓↓↓1 #
 # don't put duplicate lines in the history. See bash(1) for more options
@@ -179,6 +179,9 @@ if [[ -v TMUX ]]; then
     echo -en "\033]0;TMUX\a" #Doesn't work from inside tmux... Dumb. 11/10/21 02:50:pm 
 fi
 # ↑↑↑ END CHICKEN
+# ↓↓↓ DICTIONARY
+export SDCV_PAGER=/usr/bin/less
+# ↑↑↑ END DICTIONARY
 # ↓↓↓ LOCAL .bashrc
 if [[ -f ~/.bash/local/.bashrc ]]; then
     . ~/.bash/local/.bashrc
