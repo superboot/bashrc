@@ -1,0 +1,48 @@
+# Shortcuts
+"jjpn": "2>/dev/null"
+"jjk": ">/dev/null 2>&1 & disown "
+#"jje": "emacs "
+"jjs": "source ~/.bashrc"
+"jjm": "bind -f ~/.inputrc"
+"jjh": "bind -s"
+"jjsys": "tail -f -n20 /var/log/syslog"
+"jjsu": "sudo !!"
+"jjpl": " | less"
+"jjpg": " | grep "
+"jjd": "\"$(date +%Y%m%d)\""
+"jjn": "$(rp)-"
+"jjmd": "{,.deleteme}"
+"jjfu": "fusermount -u /"
+"jjip": "192.168.125."
+"jjll": '$(!!)'
+"jjlt": '"$(latestFile)"'
+"jjpp": "curl -F 'sprunge=<-' http://sprunge.us"
+"jk": "()"
+#"\e,": '"$(ls -1tr | tail -n1)" '
+"jjlt": '"$(latestFile)"'
+## Removed so I can use alt-, as dabbrev-expand.
+#"\e,": '"$(latestFile)" '
+#" rr": "\C-uranger\C-j"
+
+# Bash functionalitly
+"\C-t": shell-expand-line
+# "\e,": yank-nth-arg # I don't use this, so I moved it to insert the filename of the most recently modified file.
+"\ew": copy-region-as-kill
+"\ek": kill-region
+
+#change h to enter for testing the ergodox keyboard layout
+#"h": accept-line
+#
+
+# From my read through man bash 09/13/18.
+# set blink-matching-paren on
+set completion-display-width 0
+
+# Make it easy to append --help to commands.
+"\C-h": ' --help ' ; accept-line
+
+# Add the ability to step through completions with shift-tab
+"\e`": menu-complete
+# Add history expanding the word. 
+"\e,": dabbrev-expand
+

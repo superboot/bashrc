@@ -148,10 +148,11 @@ export RANGER_LOAD_DEFAULT_RC=FALSE
 # ↓↓↓ PYENV
 export PYENV_ROOT="$HOME/.pyenv"
 # ↑↑↑ END PYENV
-# ↓↓↓ PATH EXPORTS
+# ↓↓↓ EXPORTS (PATH etc.)
 # Add to path:
 export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:$HOME/bin:$HOME/local/bin:$HOME/.local/bin:$HOME/go/bin"
-# ↑↑↑ END PATH EXPORTS
+export INPUTRC="$HOME/.bash/inputrc
+# ↑↑↑ END EXPORTS (PATH etc.)
 # ↓↓↓ FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # Dissable ctrl-s's binding to flowcontrol's "stop"
 stty -ixon
