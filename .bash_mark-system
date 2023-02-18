@@ -57,7 +57,7 @@ m ()
             for m_key in "${!marks[@]}"; # For each key in the associative array
             do
                 echo "$m_key: ${marks[$m_key]}" # print the key: value  pairs.
-            done
+            done | sort -d
             return 0
         fi
 

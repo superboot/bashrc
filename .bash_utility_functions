@@ -1377,7 +1377,7 @@ webSearch() {
     shift
     search="$*"
 
-    encoded="$(python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$search")"
+    encoded="$(python -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$search")"
 
     case "$engine" in
         duck|duckduck|duckduckgo)
@@ -1389,12 +1389,16 @@ webSearch() {
         stackoverflow|so)
             url="https://stackoverflow.com/search?q=$encoded"
             ;;
+        webster|dict)
+            url="https://www.merriam-webster.com/dictionary/$encoded"
+            ;;
     esac
 
     elinks "$url"
 }
 alias ?='webSearch duck'
 alias ??='webSearch wikipedia'
+alias ?d='webSearch webster'
 alias ?w='webSearch wikipedia'
 alias ?so='webSearch stackoverflow'
 # ↑↑↑ END webSearch

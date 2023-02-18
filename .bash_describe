@@ -1,9 +1,11 @@
-# This suite is used to interogate the current environment and system to obtain a description of a keyword in the various available contexts.
+# This suite is used to interrogate the current environment and system to obtain a description of a keyword in the various available contexts.
 
 ## Required on-disk utilities:
 ###  cut grep tail which wc column tr
 ## For Debian:
 ###  dpkg dpkg-query dlocate apt-cache command-not-found
+## For RHEL and derivatives 
+###  dnf rpm command-not-found
 ## Optional
 ###  pygmentize
 ###  tput # Used for colored headings etc.

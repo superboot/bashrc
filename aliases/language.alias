@@ -1,5 +1,5 @@
 # Language
-alias define=sdcv
+alias define='sdcv --color'
 alias def='sdcv --color'
 alias iow=aiksaurus #thusaurus, alias is a mnumonic: In Other Words
 alias filesystems="apt-cache search fs | egrep '^[a-z]*fs '"

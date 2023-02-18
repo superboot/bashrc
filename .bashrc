@@ -8,6 +8,10 @@
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
 # ↑↑↑ END NON-INTERACTIVE CHECK
+# ↓↓↓ SHELL OPTIONS
+# Extended globbing
+shopt -s extglob
+# ↑↑↑ END SHELL OPTIONS
 # ↓↓↓1 IMPORTS
 # ↓↓↓ Imports array
 # This array keeps track of what has been imported, by having an incromenter at the end of scripts to be imported.
