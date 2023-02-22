@@ -684,7 +684,9 @@ describeExecutable() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    local location parentPackage symlinkResolutionPath linecount filetype packageDescription
+    local dir location parentPackage symlinkResolutionPath linecount filetype packageDescription
+    declare -a deduplicatedPATH 
+    declare -a executables
 
     # Sanity check
     if ! isExecutable "$arg"; then
@@ -692,7 +694,27 @@ describeExecutable() {
     fi
 
     # Location
-    location="$(which "$arg")"
+    
+    if [[ ! "$arg" =~ .*/.* ]] then # If arg is not a path to a file.
+        # Deduplicate paths in PATH
+        for dir in $(echo "$PATH" | tr ':' ' ')
+        do
+        if ! inArray "$dir" deduplicatedPATH; then 
+            deduplicatedPATH+=("$dir")
+        fi
+        done
+
+        # Find executables on the path
+        for dir in "${deduplicatedPATH[@]}"
+        do
+            location="$dir/$arg"
+            if [[ -f "$location" ]] && [[ -x "$location" ]]; then
+                describeExecutable "$location"
+            fi
+        done
+        return
+    fi
+    location="$arg"
 
     # Derefference symlinks
     if [[ -L "$location" ]]; then
