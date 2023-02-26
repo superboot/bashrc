@@ -97,6 +97,22 @@ listArgs() {
 # ↑↑↑ END listArgs
 
 # Environment
+# ↓↓↓ def identifyPackageManager()
+identifyPackageManager() {
+    local _DOCSTRING="Identify which package manager is managing the system. Sets global variable packageManager."
+    local _USAGE="Usage: identifyPackageManager "
+    functionTracingDebug "$@"
+
+    local manager
+
+    for manager in apt-cache dpkg dlocate rpm dnf yum
+    do
+        #TODO
+        :
+    done
+}
+# ↑↑↑ END identifyPackageManager
+
 # ↓↓↓ def setSyntaxHighlighter()
 setSyntaxHighlighter() {
     local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
