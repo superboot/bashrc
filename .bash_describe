@@ -711,7 +711,7 @@ describeExecutable() {
 
     # Location
     
-    if [[ ! "$arg" =~ .*/.* ]] then # If arg is not a path to a file.
+    if [[ ! "$arg" =~ .*/.* ]]; then # If arg is not a path to a file.
         # Deduplicate paths in PATH
         for dir in $(echo "$PATH" | tr ':' ' ')
         do
