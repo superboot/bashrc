@@ -359,9 +359,26 @@ indentIt() {
 # ↑↑↑ END indentIt
 
 # Packages
-# ↓↓↓ def queryDescribeDB()
+# ↓↓↓ def getDistroFlavor() DISTRO DEPENDENT
+getDistroFlavor() {
+    local _DOCSTRING="Deturmins the flavor of the distro we are running."
+    local _USAGE="Usage: getDistroFlavor "
+    functionTracingDebug "$@"
+
+    if { which dnf || which yum; } >/dev/null 2>/dev/null; then
+        echo "red-hat"
+        return
+    fi
+
+    if { which apt-get || which dpkg; } >/dev/null 2>/dev/null; then
+        echo "debian"
+        return
+    fi
+}
+# ↑↑↑ END getDistroFlavor
+# ↓↓↓ def queryDescribeDB() DISTRO DEPENDENT
 queryDescribeDB() {
-    local _DOCSTRING="Query describe's package DB from the command_not_found package."
+    local _DOCSTRING="Query describe's package DB from the command_not_found package (Used only for debian systems)."
     local _USAGE="Usage: queryDescribeDB <query>"
     functionTracingDebug "$@"
 
@@ -369,12 +386,75 @@ queryDescribeDB() {
     minimumArguments 1 "$@" || return 3
     query="$1"
 
-    local packageDB=/var/lib/command-not-found/commands.db
-
-    sqlite3 "$packageDB" "$query" 2>/dev/null
+    if [[ "$_distroFlavor" == "debian" ]]; then
+        local packageDB=/var/lib/command-not-found/commands.db
+        sqlite3 "$packageDB" "$query" 2>/dev/null
+    else
+        echo "Tried to run $FUNCNAME on a non-debian system. This is a bug."
+    fi
 }
 # ↑↑↑ END queryDescribeDB
-# ↓↓↓ def packageIsInstalled()
+# ↓↓↓ def getPackageDescription() DISTRO DEPENDENT
+getPackageDescription() {
+    local _DOCSTRING="Returns the description of the named package."
+    local _USAGE="Usage: getPackageDescription <package>"
+    functionTracingDebug "$@"
+
+    local  package
+    minimumArguments 1 "$@" || return 3
+    package="$1"
+    
+    if [[ "$_distroFlavor" == "debian" ]] then
+        dpkg -s "$package" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g'
+    elif [[ "$_distroFlavor" == "red-hat" ]] then
+        dnf repoquery --qf '%{description}' "$package" 2>/dev/null | sed 's/^/ |/g'
+    fi
+}
+# ↑↑↑ END getPackageDescription
+# ↓↓↓ def getPackageSummary() DISTRO DEPENDENT
+getPackageSummary() {
+    local _DOCSTRING="Returns the description of the named package."
+    local _USAGE="Usage: getPackageSummary <package>"
+    functionTracingDebug "$@"
+
+    local  package
+    minimumArguments 1 "$@" || return 3
+    package="$1"
+    
+    if [[ "$_distroFlavor" == "debian" ]] then
+        :
+    elif [[ "$_distroFlavor" == "red-hat" ]] then
+        dnf repoquery --qf '%{summary}' "$package" 2>/dev/null
+    fi
+}
+# ↑↑↑ END getPackageSummary
+# ↓↓↓ def listExecutablesInPackage() DISTRO DEPENDENT
+listExecutablesInPackage() {
+    local _DOCSTRING="List the files included in the named package."
+    local _USAGE="Usage: listExecutablesInPackage <package>"
+    functionTracingDebug "$@"
+
+    local  package
+    minimumArguments 1 "$@" || return 3
+    package="$1"
+
+    local line
+
+    {
+        if [[ "$_distroFlavor" == debian ]]; then
+            dpkg -L "$package" 
+        elif [[ "$_distroFlavor" == "red-hat" ]]; then
+            rpm -ql "$package" 
+        fi
+    } | while read line # For all the files included in the package
+    do
+        [[ -f "$line" ]] && # If it's a file
+        [[ -x "$line" ]] && # If it's executable
+        echo "$line" | indentIt 2 
+    done
+}
+# ↑↑↑ END listExecutablesInPackage
+# ↓↓↓1 def packageIsInstalled() DISTRO DEPENDENT
 packageIsInstalled() {
     local _DOCSTRING="Returns true/false if the package is/not installed."
     local _USAGE="Usage: packageIsInstalled <package>"
@@ -384,13 +464,40 @@ packageIsInstalled() {
     minimumArguments 1 "$@" || return 3
     package="$1"
 
-    if dpkg-query -s "$package" &>/dev/null; then
-        return 0
-    else
-        return 1
+    local rv
+
+    if [[ "$_distroFlavor" == "debian" ]]; then
+        dpkg-query -s "$package" &>/dev/null
+        rv=$?
+    elif [[ "$_distroFlavor" == "red-hat" ]]; then
+        rpm -qi "$package" &>/dev/null
+        rv=$?
     fi
+    return "$rv"
 }
-# ↑↑↑ END packageIsInstalled
+# ↑↑↑1 END packageIsInstalled
+# ↓↓↓ def getParentPackage() DISTRO DEPENDENT
+getParentPackage() {
+    local _DOCSTRING="Returns the name of the package that owns the file at the given path"
+    local _USAGE="Usage: getParentPackage <path>"
+    functionTracingDebug "$@"
+
+    local  path
+    minimumArguments 1 "$@" || return 3
+    path="$1"
+
+    local parentPackage
+    
+    if [[ "$_distroFlavor" == "debian" ]] then
+        parentPackage="$(dlocate "$path" | grep ": $path$" | head -n1 | cut -d':' -f1)"
+    elif [[ "$_distroFlavor" == "red-hat" ]] then
+        parentPackage="$(rpm -qf "$path")"
+    fi
+
+    echo "$parentPackage"
+}
+# ↑↑↑ END getParentPackage
+
 
 
 ## DESCRIBE SUITE
@@ -507,7 +614,7 @@ isFunction() {
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
-    declare -F | cut -d' ' -f 3 | grep "^${arg}$" 2>/dev/null 1>/dev/null
+    declare -F "${arg}" 2>/dev/null 1>/dev/null
 }
 # ↑↑↑ END isFunction
 # ↓↓↓ def isBuiltin()
@@ -546,7 +653,7 @@ isExecutable() {
     which "$arg" >/dev/null 2>/dev/null
 }
 # ↑↑↑ END isExecutable
-# ↓↓↓ def isPackage()
+# ↓↓↓ def isPackage() DISTRO DEPENDENT
 isPackage() {
     local _DOCSTRING="Returns true/false if arg is/not a name of a package."
     local _USAGE="Usage: isPackage <name>"
@@ -558,7 +665,11 @@ isPackage() {
     
     local response
 
-    response="$(queryDescribeDB "SELECT name FROM packages WHERE name IS \"$name\"")"
+    if [[ "$_distroFlavor" == "debian" ]] then
+        response="$(queryDescribeDB "SELECT name FROM packages WHERE name IS \"$name\"")"
+    elif [[ "$_distroFlavor" == "red-hat" ]] then
+        response="$(dnf repoquery --qf "%{name}" "$name" 2>/dev/null)"
+    fi
 
     [[ "$response" == "$name" ]] && return 0 || return 1
 }
@@ -743,7 +854,7 @@ describeExecutable() {
     fi
 
     # Parent package
-    parentPackage="$(dlocate "$location" | grep ": $location$" | head -n1 | cut -d':' -f1)"
+    parentPackage="$(getParentPackage "$location")"
 
     # Filetype
     filetype="$(file "$location" | cut -d':' -f2 | cut -d',' -f1)" # Get the type of executable it is.
@@ -781,7 +892,7 @@ describeExecutable() {
     fi
 }
 # ↑↑↑ END describeExecutable
-# ↓↓↓ def describePackage()
+# ↓↓↓ def describePackage() 
 describePackage() {
     local _DOCSTRING="Returns the definition of the packaged given"
     local _USAGE="Usage: describePackage <name>"
@@ -798,7 +909,7 @@ describePackage() {
         state="${green}Installed${normal}"
         isInstalled=true
         # Description
-        packageDescription="$(dpkg -s "$name" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g')"
+        packageDescription="$(getPackageDescription "$name")"
     else
         state="${red}Not installed${normal}"
     fi
@@ -825,12 +936,7 @@ describePackage() {
 
         # Included executables 
         echo "${blue}Included executables${normal}:" | indentIt 1
-        dpkg -L "$name" | while read line # For all the files included in the package
-        do
-            [[ -f "$line" ]] && # If it's a file
-            [[ -x "$line" ]] && # If it's executable
-            echo "$line" | indentIt 2 
-        done
+        listExecutablesInPackage "$name"
     fi
 }
 # ↑↑↑ END describePackage
@@ -870,6 +976,9 @@ describe() {
 
     #local normal="$(tput setaf 230)"
 
+    # Determine what distribution flavor we are running (debian/red-hat)
+    _distroFlavor="$(getDistroFlavor)" || return 1
+    
     header='================='
     separator='================='
 

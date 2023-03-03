@@ -1,5 +1,5 @@
 # Import alias collections
-for collection in av disk fun git language ls menu networking office packages productivity programming reff shell text-processing vim
+for collection in av disk fun git language ls menu networking office packages productivity programming reff shell text-processing vim docker
 do
     . $HOME/.bash/aliases/$collection.alias
 done
