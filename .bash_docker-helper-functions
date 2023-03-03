@@ -1,31 +1,75 @@
 # ↓↓↓ def list-containers()
 list-containers() {
     local _DOCSTRING="List all docker containers, across all status levels."
-    local _USAGE="Usage: list-containers "
+    local _USAGE="Usage: list-containers [requestedType]"
     functionTracingDebug "$@"
 
+    local requestedType="${1:-none}"
 
-    echo "${liabilityPink}Created$normal:"
-    docker container ls --filter status=created | indentIt 1
+    local t name color line sectionTitleText columnHeaders
 
-    echo "${green}Running$normal:"
-    docker container ls --filter status=running | indentIt 1
+    # Parse args
 
-    echo "${yellow}Paused$normal:"
-    docker container ls --filter status=paused | indentIt 1
+    declare -A typeToColor
+    typeToColor+=(
+            [created]="$liabilityPink"
+            [running]="$green"
+            [paused]="$yellow"
+            [restarting]="$dodgerBlue"
+            [exited]="$princePurple"
+            [dead]="$red"
+            [removing]="$alertRed"
+        )
 
-    echo "${dodgerBlue}Restarting$normal:"
-    docker container ls --filter status=restarting | indentIt 1
+    # Parse args
+    if keyInArray "$requestedType" typeToColor; then
+        # Print only the requested section
+        :
+    elif [[ "$requestedType" == "all" ]]; then
+        # Print all sections
+        :
+    elif [[ "$requestedType" == "none" ]]; then
+        # No arg supplied
+        :
+    else
+        echo "Unknown option: $requestedType" >&2
+        return 1
+    fi
 
-    echo "${princePurple}Exited$normal:"
-    docker container ls --filter status=exited | indentIt 1
 
-    echo "${red}Dead$normal:"
-    docker container ls --filter status=dead | indentIt 1
+    for name in ${!typeToColor[*]}
+    do
+        # Filter sections to be printed based on arguments
+        if [[ "$requestedType" == none || "$requestedType" == all ]]; then
+            : # Continue to print the section
+        elif [[ "$requestedType" != "$name" ]]; then
+            continue # Move on to the next section
+        fi
 
-    echo "${alertRed}Removing$normal:"
-    docker container ls --filter status=removing | indentIt 1
+        color="${typeToColor[$name]}"
+        unset buffer
+        declare -a buffer
+
+        while read line
+        do
+            buffer+=("$line") 
+        done < <(sudo docker container ls --filter status=$name | indentIt 1)
+        unset line
+
+        local line
+        if [[ "${buffer[*]:1}" != "" || "$requestedType" == "all" ]]; then # if the 2nd to last lines are not empty
+            sectionTitleText="${color}${name}${normal}:" # Header
+            columnHeaders="${buffer[0]}"
+
+            echo "$sectionTitleText"
+            echo "$columnHeaders"
+
+            for line in "${buffer[@]:1}" # Skip the first line (the built in header)
+            do
+                echo "$line"
+            done
+        fi
+    done
 }
 # ↑↑↑ END list-containers
-
 
