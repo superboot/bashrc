@@ -404,9 +404,9 @@ getPackageDescription() {
     minimumArguments 1 "$@" || return 3
     package="$1"
     
-    if [[ "$_distroFlavor" == "debian" ]] then
+    if [[ "$_distroFlavor" == "debian" ]]; then
         dpkg -s "$package" | sed -n '/Description:/,$ p' | sed '/^[^ ]/d' | sed 's/^ //g' | sed '/^$/,$ d' | sed 's/^/ |/g'
-    elif [[ "$_distroFlavor" == "red-hat" ]] then
+    elif [[ "$_distroFlavor" == "red-hat" ]]; then
         dnf repoquery --qf '%{description}' "$package" 2>/dev/null | sed 's/^/ |/g'
     fi
 }
@@ -421,9 +421,9 @@ getPackageSummary() {
     minimumArguments 1 "$@" || return 3
     package="$1"
     
-    if [[ "$_distroFlavor" == "debian" ]] then
+    if [[ "$_distroFlavor" == "debian" ]]; then
         :
-    elif [[ "$_distroFlavor" == "red-hat" ]] then
+    elif [[ "$_distroFlavor" == "red-hat" ]]; then
         dnf repoquery --qf '%{summary}' "$package" 2>/dev/null
     fi
 }
@@ -488,9 +488,9 @@ getParentPackage() {
 
     local parentPackage
     
-    if [[ "$_distroFlavor" == "debian" ]] then
+    if [[ "$_distroFlavor" == "debian" ]]; then
         parentPackage="$(dlocate "$path" | grep ": $path$" | head -n1 | cut -d':' -f1)"
-    elif [[ "$_distroFlavor" == "red-hat" ]] then
+    elif [[ "$_distroFlavor" == "red-hat" ]]; then
         parentPackage="$(rpm -qf "$path")"
     fi
 
@@ -665,9 +665,9 @@ isPackage() {
     
     local response
 
-    if [[ "$_distroFlavor" == "debian" ]] then
+    if [[ "$_distroFlavor" == "debian" ]]; then
         response="$(queryDescribeDB "SELECT name FROM packages WHERE name IS \"$name\"")"
-    elif [[ "$_distroFlavor" == "red-hat" ]] then
+    elif [[ "$_distroFlavor" == "red-hat" ]]; then
         response="$(dnf repoquery --qf "%{name}" "$name" 2>/dev/null)"
     fi
 
