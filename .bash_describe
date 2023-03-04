@@ -438,19 +438,22 @@ listExecutablesInPackage() {
     minimumArguments 1 "$@" || return 3
     package="$1"
 
-    local line
+    local line symlinkResolutionPath
 
     {
         if [[ "$_distroFlavor" == debian ]]; then
             dpkg -L "$package" 
         elif [[ "$_distroFlavor" == "red-hat" ]]; then
-            rpm -ql "$package" 
+            rpm -ql "$package" | grep -v '/usr/lib/\.build-id'
         fi
     } | while read line # For all the files included in the package
     do
-        [[ -f "$line" ]] && # If it's a file
-        [[ -x "$line" ]] && # If it's executable
-        echo "$line" | indentIt 2 
+        if [[ -f "$line" ]] &&        # If it's a file
+           [[ -x "$line" ]]; then     # If it's executable
+            line="$(derefferenceSymlink "$line")"
+
+            echo "$line" | indentIt 2 
+        fi
     done
 }
 # ↑↑↑ END listExecutablesInPackage
@@ -492,11 +495,55 @@ getParentPackage() {
         parentPackage="$(dlocate "$path" | grep ": $path$" | head -n1 | cut -d':' -f1)"
     elif [[ "$_distroFlavor" == "red-hat" ]]; then
         parentPackage="$(rpm -qf "$path")"
+        if [[ "$parentPackage" =~ .*not\ owned\ by\ any\ package ]]; then
+            parentPackage="None" # Replace rpm's verbose failure message with "none".
+        fi
     fi
 
     echo "$parentPackage"
 }
 # ↑↑↑ END getParentPackage
+# ↓↓↓ def derefferenceSymlink()
+derefferenceSymlink() {
+    local _DOCSTRING="Returns the resolution chain of the supplied symlink."
+    local _USAGE="Usage: derefferenceSymlink <link>"
+    functionTracingDebug "$@"
+
+    local  link full
+
+    # Check for options
+    if [[ "$1" == "--full" ]]; then
+        full="" # Show me the way
+        shift
+    else
+        full="-f" # Cut to the chase
+    fi
+
+    minimumArguments 1 "$@" || return 3
+    link="$1"
+
+    local symlinkResolutionPath  color
+
+    if [[ -L "$link" ]]; then # If it's a symlink
+        symlinkResolutionPath="${cyan}$link${normal}"
+        while [[ -L "$link" ]]  
+        do
+            link="$(readlink $full "$link")" # Resolve a single level of symlink
+            # Turn color normal if the resolved link is an actual file now.
+            if [[ ! -L "$link" ]]; then
+                color="$normal"
+            else
+                color="$cyan"
+            fi
+            symlinkResolutionPath+=" --> ${color}$link${normal}"
+        done
+        link="$symlinkResolutionPath"
+    fi
+
+    echo "$link"
+}
+# ↑↑↑ END derefferenceSymlink
+
 
 
 
@@ -843,15 +890,7 @@ describeExecutable() {
     fi
     location="$arg"
 
-    # Derefference symlinks
-    if [[ -L "$location" ]]; then
-        symlinkResolutionPath+="${cyan}$location${normal}"
-        while [[ -L "$location" ]]  
-        do
-            location="$(readlink -f "$location")"
-            symlinkResolutionPath+=" --> ${cyan}$location${normal}"
-        done
-    fi
+    symlinkResolutionPath="$(derefferenceSymlink "$location")" 
 
     # Parent package
     parentPackage="$(getParentPackage "$location")"
@@ -871,7 +910,7 @@ describeExecutable() {
     { 
         echo "Path:|$location"
         echo "Type:|$filetype"
-        if [[ "$symlinkResolutionPath" != '' ]]; then
+        if [[ "$symlinkResolutionPath" != "$location" ]]; then
             echo "Resolution:|$symlinkResolutionPath"
         fi
         if [[ "$parentPackage" != '' ]]; then
