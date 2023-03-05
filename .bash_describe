@@ -97,22 +97,6 @@ listArgs() {
 # ↑↑↑ END listArgs
 
 # Environment
-# ↓↓↓ def identifyPackageManager()
-identifyPackageManager() {
-    local _DOCSTRING="Identify which package manager is managing the system. Sets global variable packageManager."
-    local _USAGE="Usage: identifyPackageManager "
-    functionTracingDebug "$@"
-
-    local manager
-
-    for manager in apt-cache dpkg dlocate rpm dnf yum
-    do
-        #TODO
-        :
-    done
-}
-# ↑↑↑ END identifyPackageManager
-
 # ↓↓↓ def setSyntaxHighlighter()
 setSyntaxHighlighter() {
     local _DOCSTRING="Checks if the syntax highlighter is installed and enables or bypasses it."
@@ -357,6 +341,46 @@ indentIt() {
     done
 }
 # ↑↑↑ END indentIt
+# ↓↓↓ def derefferenceSymlink()
+derefferenceSymlink() {
+    local _DOCSTRING="Returns the resolution chain of the supplied symlink."
+    local _USAGE="Usage: derefferenceSymlink <link>"
+    functionTracingDebug "$@"
+
+    local  link full
+
+    # Check for options
+    if [[ "$1" == "--full" ]]; then
+        full="" # Show me the way
+        shift
+    else
+        full="-f" # Cut to the chase
+    fi
+
+    minimumArguments 1 "$@" || return 3
+    link="$1"
+
+    local symlinkResolutionPath  color
+
+    if [[ -L "$link" ]]; then # If it's a symlink
+        symlinkResolutionPath="${cyan}$link${normal}"
+        while [[ -L "$link" ]]  
+        do
+            link="$(readlink $full "$link")" # Resolve a single level of symlink
+            # Turn color normal if the resolved link is an actual file now.
+            if [[ ! -L "$link" ]]; then
+                color="$normal"
+            else
+                color="$cyan"
+            fi
+            symlinkResolutionPath+=" --> ${color}$link${normal}"
+        done
+        link="$symlinkResolutionPath"
+    fi
+
+    echo "$link"
+}
+# ↑↑↑ END derefferenceSymlink
 
 # Packages
 # ↓↓↓ def getDistroFlavor() DISTRO DEPENDENT
@@ -503,47 +527,59 @@ getParentPackage() {
     echo "$parentPackage"
 }
 # ↑↑↑ END getParentPackage
-# ↓↓↓ def derefferenceSymlink()
-derefferenceSymlink() {
-    local _DOCSTRING="Returns the resolution chain of the supplied symlink."
-    local _USAGE="Usage: derefferenceSymlink <link>"
+
+# Administration
+# ↓↓↓ def printHelp()
+printHelp() {
+    local _DOCSTRING="Prints out the help screen."
+    local _USAGE="Usage: printHelp "
     functionTracingDebug "$@"
 
-    local  link full
+    cat <<-EOF
+    Describe: Environment introspection one-stop-shopping.
 
-    # Check for options
-    if [[ "$1" == "--full" ]]; then
-        full="" # Show me the way
-        shift
-    else
-        full="-f" # Cut to the chase
-    fi
+    Describe discovers the possible meanings of the given keyword. 
 
-    minimumArguments 1 "$@" || return 3
-    link="$1"
+    Supported objects:
+        - Variables
+        - Indexed arrays
+        - Associative arrays
+        - Aliases
+        - Functions
+        - Built-in commands
+        - Executables on PATH
+        - System packages
 
-    local symlinkResolutionPath  color
+    Describe is has object completion and a convience alias to 'c'.
 
-    if [[ -L "$link" ]]; then # If it's a symlink
-        symlinkResolutionPath="${cyan}$link${normal}"
-        while [[ -L "$link" ]]  
-        do
-            link="$(readlink $full "$link")" # Resolve a single level of symlink
-            # Turn color normal if the resolved link is an actual file now.
-            if [[ ! -L "$link" ]]; then
-                color="$normal"
-            else
-                color="$cyan"
-            fi
-            symlinkResolutionPath+=" --> ${color}$link${normal}"
-        done
-        link="$symlinkResolutionPath"
-    fi
-
-    echo "$link"
+	EOF
 }
-# ↑↑↑ END derefferenceSymlink
+# ↑↑↑ END printHelp
+# ↓↓↓ def parseArgs()
+parseArgs() {
+    local _DOCSTRING="Parse the commandline arguemnts."
+    local _USAGE="Usage: parseArgs "
+    functionTracingDebug "$@"
 
+    local keyword
+
+    while [[ $# > 0 ]] && [[ "$1" =~ ^- ]]
+    do
+        case "$1" in
+            --help | -h)
+                printHelp
+                return 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    keyword="$1"
+    echo "$keyword" # Return the subject to be introspected 
+}
+# ↑↑↑ END parseArgs
 
 
 
@@ -854,7 +890,7 @@ describeExecutable() {
     local _USAGE="Usage: describeExecutable <arg>"
     functionTracingDebug "$@"
 
-    local  arg
+    local  arg 
     minimumArguments 1 "$@" || return 3
     arg="$1"
 
@@ -883,6 +919,12 @@ describeExecutable() {
         do
             location="$dir/$arg"
             if [[ -f "$location" ]] && [[ -x "$location" ]]; then
+                if [[ ! -v printedHeader ]]; then
+                    echo "${green}Executable on PATH${normal}:"
+                    local printedHeader=true
+                else
+                    echo ""
+                fi
                 describeExecutable "$location"
             fi
         done
@@ -905,7 +947,7 @@ describeExecutable() {
     fi
 
     # Display
-    echo "${green}Executable on PATH${normal}:"
+
     echo "    $arg:"
     { 
         echo "Path:|$location"
@@ -984,7 +1026,7 @@ describe() {
     local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
     functionTracingDebug "$@"
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
-    local arg foreign
+    local arg foreign 
 
     if [[ "${FUNCNAME[1]}" != 'describe' ]]; then # If we were not called by ourselves
         set -o pipefail
@@ -994,53 +1036,31 @@ describe() {
         return "$rv"
     fi
 
-    # Arg parse
-    while [[ $# > 0 ]]
-    do
-        case "$1" in
-            --help | -h)
-                echo
-                echo -e "$_DOCSTRING"
-                echo
-                return
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
-    arg="$1"
 
-    local returnTrue header separator type keepGoing 
+    local header separator _distroFlavor output 
 
-    #local normal="$(tput setaf 230)"
+    arg="$(parseArgs "$@")" || { raiseError "Please supply an argument to describe."; return 1; } # Get the return value of parseArgs, but return 0 if parseArgs returns non-zero.
 
-    # Determine what distribution flavor we are running (debian/red-hat)
-    _distroFlavor="$(getDistroFlavor)" || return 1
+    _distroFlavor="$(getDistroFlavor)" || return 1 # Determine what distribution flavor we are running (debian/red-hat)
     
     header='================='
     separator='================='
 
-    # Check that we have valid input before we print the header... This seems like it's taking the long way to this answer...
-    categories=(Var IndexedArray AssociativeArray Alias Function Builtin Executable Package )
-    for type in "${categories[@]}"
-    do
-        is$type "$arg" && keepGoing=yes
-    done
-    if [[ "$keepGoing" != yes ]]; then return 1; fi
-    echo "$header"
+    output="$(\
+        isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
+        isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
+        isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
+        isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
+        isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
+        isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
+        isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
+        isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
+    )"
 
-    # If we have a valid arg, print the header.
-    #{ isVar "$arg" || isIndexedArray "$arg" || isAssociativeArray "$arg" || isAlias "$arg" || isFunction "$arg" || isBuiltin "$arg" || isExecutable "$arg"; } && echo "$header" || return 1
-
-    isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
-    isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
-    isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
-    isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
-    isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
-    isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
-    isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
-    isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
+    if [[ "$output" != '' ]]; then
+        echo "$header"
+        echo "$output"
+    fi
 
     return 0
 }

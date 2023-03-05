@@ -154,7 +154,7 @@ export PYENV_ROOT="$HOME/.pyenv"
 # ↑↑↑ END PYENV
 # ↓↓↓ EXPORTS (PATH etc.)
 # Add to path:
-export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:$HOME/bin:$HOME/local/bin:$HOME/.local/bin:$HOME/go/bin"
+#export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:$HOME/bin:$HOME/local/bin:$HOME/.local/bin:$HOME/go/bin"
 export INPUTRC="$HOME/.bash/inputrc"
 # ↑↑↑ END EXPORTS (PATH etc.)
 # ↓↓↓ FLOWCONTROL (ctrl-s, ctrl-q anoyance).
