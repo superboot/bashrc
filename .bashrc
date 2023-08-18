@@ -1,4 +1,6 @@
 #set -x
+# setlocal foldmarker=↓↓↓,↑↑↑
+# setlocal foldmethod=marker
 # ↓↓↓ Preamble
 #     ~/.bashrc: executed by bash(1) for non-login shells.
 #     see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
@@ -152,8 +154,8 @@ export RANGER_LOAD_DEFAULT_RC=FALSE
 # ↓↓↓ PYENV
 export PYENV_ROOT="$HOME/.pyenv"
 # ↑↑↑ END PYENV
-# ↓↓↓ EXPORTS (PATH etc.)
-# Add to path:
+# ↓↓↓ EXPORTS (PATH, INPUTRC, etc.)
+# Path set in .profile
 #export PATH="$PYENV_ROOT/bin:$PATH:/snap/bin:$HOME/bin:$HOME/local/bin:$HOME/.local/bin:$HOME/go/bin"
 export INPUTRC="$HOME/.bash/inputrc"
 # ↑↑↑ END EXPORTS (PATH etc.)

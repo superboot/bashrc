@@ -363,12 +363,15 @@ functrace() {
 
 # ↓↓↓ def stackTrace()
 stackTrace() {
-    ## Prints a stack trace. Needs work... TODO Make this better.
+    local _DOCSTRING="Prints a stack trace of the current call stack with indentation, source file, line number and arguments to the called function."
+    local _USAGE="Usage: stackTrace "
     functionTracingDebug "$@"
-    local idx
-    for (( idx=1; idx<="${#FUNCNAME[*]}"; idx++ ))
-    do
-        caller "$idx"
+    for i in $(seq $((${#FUNCNAME[*]} - 1)) -1 0)
+    do 
+        if [[ "$i" == 0 ]]; then
+            continue
+        fi
+        echo "$(repeatString '  ' "$((${#FUNCNAME[*]} - $i))")"$i:${FUNCNAME[$i]} ${BASH_ARGV[$i]}: FROM: ${BASH_SOURCE[$i]} LINE: ${BASH_LINENO[$i]} 
     done
 }
 # ↑↑↑ END stackTrace
