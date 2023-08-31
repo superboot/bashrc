@@ -72,4 +72,15 @@ latestFileInDir() {
     printf '%s\n' "$latest" 
 }
 # ↑↑↑ END latestFile
+defineMegaHelpFunctions()
+{
+    h()
+    {
+        if [[ $# -gt 0 ]]; then
+            mega-"$1" --help
+        else
+            mega-help | tail -n+9
+        fi
+    }
+}
 _importsArray[functions]="$(( ${_importsArray[functions]} + 1 ))"
