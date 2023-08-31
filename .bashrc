@@ -112,24 +112,39 @@ PROMPT_COMMAND='history -a; printSuperbootsInfoBar'
 PS1='[$(generateExitStatus $?)]\$ ' # Let's keep things simple here.  If you want the prompt hit alt-h.
 # ↑↑↑ END PROMPT (PS1)
 # ↓↓↓1 PROMPT FUNCTION printSuperbootsInfoBar()
+barToggle()
+{
+    case $_printInfoBar in
+        true)
+            _printInfoBar=false
+            ;;
+        false)
+            _printInfoBar=true
+            ;;
+        *)
+            _printInfoBar=true
+    esac
+}
 printSuperbootsInfoBar ()
 {
-    local _s='-----------------------------'
-    local bigPadString="$_s$_s$_s$_s$_s$_s$_s$_s$_s" # Create a long line of spaces.
-    local promptCallout="$green[ PROMPT ]$normal" # A green "PROMPT" flag to see more easily see the prompt line.
-    local time="$(date +%I:%M:%S)"
-    local pwd="${PWD/$HOME/\~}"
-    local left="$promptCallout $USER@$HOSTNAME:$pwd  "
-    local right="  $time"
-    local padAmount=$(( COLUMNS - ${#left} - ${#right} ))
-    if [[ "${pad:0:1}" == '-' ]]; then
-        padAmount=0
-    fi
-    local pad="${bigPadString:0:$padAmount}" # Get padAmount of pad characters from the long line.
-    local prompt="${left}${pad}${right}" # Build the line.
-    prompt=${prompt:0:$COLUMNS} # Trim it if it is still to wide.
+    if [[ "$_printInfoBar" == true ]]; then
+        local _s='-----------------------------'
+        local bigPadString="$_s$_s$_s$_s$_s$_s$_s$_s$_s" # Create a long line of spaces.
+        local promptCallout="$green[ PROMPT ]$normal" # A green "PROMPT" flag to see more easily see the prompt line.
+        local time="$(date +%I:%M:%S)"
+        local pwd="${PWD/$HOME/\~}"
+        local left="$promptCallout $USER@$HOSTNAME:$pwd  "
+        local right="  $time"
+        local padAmount=$(( COLUMNS - ${#left} - ${#right} ))
+        if [[ "${pad:0:1}" == '-' ]]; then
+            padAmount=0
+        fi
+        local pad="${bigPadString:0:$padAmount}" # Get padAmount of pad characters from the long line.
+        local prompt="${left}${pad}${right}" # Build the line.
+        prompt=${prompt:0:$COLUMNS} # Trim it if it is still to wide.
 
-    echo "$prompt" # The acatul return value of the function.
+        echo "$prompt" # The acatul return value of the function.
+    fi
 }
 bind -r '"\eh"' # clear any binding for Alt-h
 bind -x '"\eh":printSuperbootsInfoBar' # Bind Alt-h to print the prompt.
