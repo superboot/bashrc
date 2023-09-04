@@ -127,6 +127,9 @@ barToggle()
 }
 printSuperbootsInfoBar ()
 {
+    if [[ "$1" == force ]]; then # Check if we are being forced to print the bar
+        local _printInfoBar=true
+    fi
     if [[ "$_printInfoBar" == true ]]; then
         local _s='-----------------------------'
         local bigPadString="$_s$_s$_s$_s$_s$_s$_s$_s$_s" # Create a long line of spaces.
@@ -147,7 +150,7 @@ printSuperbootsInfoBar ()
     fi
 }
 bind -r '"\eh"' # clear any binding for Alt-h
-bind -x '"\eh":printSuperbootsInfoBar' # Bind Alt-h to print the prompt.
+bind -x '"\eh":printSuperbootsInfoBar force' # Bind Alt-h to print the prompt.
 # ↑↑↑1 END printSuperbootsInfoBar()
 # ↓↓↓ COLOR LS
 # enable color support of ls

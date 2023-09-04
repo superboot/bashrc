@@ -260,7 +260,7 @@ cd ()
         esac
         shift
     done
-    if [[ "$targetDIR" == $PWD ]] || [[ "$targetDIR" == '.' ]]; then # If we are going to the same place we are.
+    if [[ "$targetDIR" == "$PWD" ]] || [[ "$targetDIR" == '.' ]]; then # If we are going to the same place we are.
         return 0 # Just stay there.
     fi
     builtin cd $normalCDArgs "$targetDIR" && cdStackAppend "$PWD" # AND append the new PWD to the stack.
@@ -432,17 +432,18 @@ cdStackPrintStackLong() {
 # ↓↓↓ def cdToMostRecent()
 cdToMostRecent() {
     local _DOCSTRING="cds to the most recent dir in the pwd. Calls itself recursively until the supplied argument is exhausted, or there is no deeper to go."
-    local _USAGE="Usage: cdToMostRecent <,...>"
+    local _USAGE="Usage: cdToMostRecent [,]..."
 
-    local levelsString="${1-,}"
-    local target
+    local levelsString="${1:-,}"
+    local target i
 
-    while read -N 1 
+    for (( i=0; i<${#levelsString}; i++ )) # For each character in the string
     do
         target="$(mostRecentlyModifiedDirectory)"
         [[ $? != 0 ]] && break
-        cd "$target"
-    done <<<"$levelsString"
+        builtin cd "$target"
+    done
+    return 0
 }
 # ↑↑↑ END cdToMostRecent
 

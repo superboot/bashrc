@@ -1116,7 +1116,7 @@ latestFileInDir() {
 
     local file latest justTheFilename
 
-    for file in in "${dir}"/*
+    for file in "${dir}"/*
     do
         if [[ "$file" -nt "$latest" ]]; then 
             latest="$file"
