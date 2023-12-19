@@ -50,7 +50,7 @@ list-containers() {
         unset buffer
         declare -a buffer
 
-        while read line
+        while IFS= read line # Set IFS to nothing, so that starting and trailing white space is preserved for the read lines.
         do
             buffer+=("$line") 
         done < <(sudo docker container ls --filter status=$name | indentIt 1)
