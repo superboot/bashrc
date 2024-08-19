@@ -22,6 +22,7 @@
 "jjlt": '"$(latestFile)"'
 "\e,": '"$(latestFile)" '
 "\C-q": ' 2>/dev/null'
+"\eg": previous-history " | grep "
 #" rr": "\C-uranger\C-j"
 
 

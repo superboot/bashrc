@@ -41,7 +41,7 @@ repl() {
                     ;;
                 *)
                     echo "Sending: eval $commandline"
-                    eval "$commandline" 1>&9 # Evaluate the commandline and send the output to file descriptor 9 (the fifo on disk).
+                    eval "$commandline" 1>&9 2>&9 # Evaluate the commandline and send the output to file descriptor 9 (the fifo on disk).
                     echo "[Exit: $?]" 1>&9 # Send the exit status.
                     echo finished eval.
                     ;;

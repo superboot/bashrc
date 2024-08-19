@@ -446,6 +446,17 @@ cdToMostRecent() {
     return 0
 }
 # ↑↑↑ END cdToMostRecent
+# ↓↓↓ def cdKeybindingToMostRecent()
+cdKeybindingToMostRecent() {
+    local _DOCSTRING="wrapping cdToMostRecent"
+    local _USAGE="Usage: cdKeybindingToMostRecent "
+    functionTracingDebug "$@"
+
+    cdToMostRecent
+    pwd
+}
+# ↑↑↑ END cdKeybindingToMostRecent
+
 
 
 # DEBUGING FUNCTIONS
@@ -493,6 +504,9 @@ bind -x '"\ep":cdStackPrintStack' # Bind Alt-p to print the stack.
 bind -x '"\eP":cdStackPrintStackLong' # Bind Alt-p to print the stack.
 bind -r '"\eu"' # clear any binding for Alt-p
 bind -x '"\eu":cdToParent' # Bind alt-u to go up one directory.
+## Alt-, to cd to most recently modified directory
+bind -r '"\e,"' # clear any binding for Alt-p
+bind -x '"\e,":cdKeybindingToMostRecent' # Bind alt-, to go to the most recently modified directory.
 
 # Start the stack off with the current PWD
 ## This is only run when this file is sourced by .bashrc (so, once per terminal/bash session/etc.)
