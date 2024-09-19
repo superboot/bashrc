@@ -73,4 +73,24 @@ list-containers() {
 }
 # ↑↑↑ END list-containers
 
+# ↓↓↓ def dtags()
+dtags() {
+    local _DOCSTRING="Lists the tags of an image on docker hub."
+    local _USAGE="Usage: dtags <image>"
+    functionTracingDebug "$@"
+
+    local  image
+    minimumArguments 1 "$@" || return 3
+    image="$1"
+	local image="${1}"
+
+	# Pulled this from: https://nicnetakis.com/blog/docker-tip-81-searching-the-docker-hub-on-the-command-line
+	curl --silent \
+		"https://registry.hub.docker.com/v2/repositories/library/${image}/tags?page_size=1000" \
+		| jq -r ".results[].name" | sort --version-sort
+}
+# ↑↑↑ END dtags
+
+
+
 _importsArray[docker-helper-functions]="$(( ${_importsArray[docker-helper-functions]} + 1 ))"

@@ -561,23 +561,20 @@ parseArgs() {
     local _USAGE="Usage: parseArgs "
     functionTracingDebug "$@"
 
-    local keyword
-
     while [[ $# > 0 ]] && [[ "$1" =~ ^- ]]
     do
         case "$1" in
             --help | -h)
                 printHelp
-                return 1
+                shift
                 ;;
             *)
-                break
+                continue
                 ;;
         esac
     done
 
-    keyword="$1"
-    echo "$keyword" # Return the subject to be introspected 
+    echo "$@" # Return the subject(s) to be introspected 
 }
 # ↑↑↑ END parseArgs
 
@@ -1026,7 +1023,7 @@ describe() {
     local _DOCSTRING="Determines the type of command (alias, function, script, program) and prints the definition, source code, .. , or package the program is from, respectively."
     functionTracingDebug "$@"
     minimumArguments 1 "$@" || return 1 # fail unles we have at least one argument.
-    local arg foreign 
+    local args arg foreign 
 
     if [[ "${FUNCNAME[1]}" != 'describe' ]]; then # If we were not called by ourselves
         set -o pipefail
@@ -1037,29 +1034,34 @@ describe() {
     fi
 
 
-    local header separator _distroFlavor output 
+    local header separator _distroFlavor 
+    declare -a output # The array that holds the output text, one big block as the value at each index, for each argument given.
 
-    arg="$(parseArgs "$@")" || { raiseError "Please supply an argument to describe."; return 1; } # Get the return value of parseArgs, but return 0 if parseArgs returns non-zero.
+    args="$(parseArgs "$@")" || { raiseError "Please supply an argument to describe."; return 1; } # Get the return value of parseArgs, but return 0 if parseArgs returns non-zero.
 
     _distroFlavor="$(getDistroFlavor)" || return 1 # Determine what distribution flavor we are running (debian/red-hat)
     
     header='================='
     separator='================='
 
-    output="$(\
-        isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
-        isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
-        isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
-        isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
-        isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
-        isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
-        isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
-        isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
-    )"
+    for arg in $args
+    do
+        output+=("$(\
+            isVar              "$arg" && { describeVar              "$arg"; echo "$separator"; } # Yellow
+            isIndexedArray     "$arg" && { describeIndexedArray     "$arg"; echo "$separator"; } # Blue
+            isAssociativeArray "$arg" && { describeAssociativeArray "$arg"; echo "$separator"; } # Red
+            isAlias            "$arg" && { describeAlias            "$arg"; echo "$separator"; } # Purple
+            isFunction         "$arg" && { describeFunction         "$arg"; echo "$separator"; } # Pink
+            isBuiltin          "$arg" && { describeBuiltin          "$arg"; echo "$separator"; } # Orange
+            isExecutable       "$arg" && { describeExecutable       "$arg"; echo "$separator"; } # Green
+            isPackage          "$arg" && { describePackage          "$arg"; echo "$separator"; } # Red
+            )")
+        output+=('\n') 
+    done
 
     if [[ "$output" != '' ]]; then
         echo "$header"
-        echo "$output"
+        echo -e "${output[@]}"
     fi
 
     return 0

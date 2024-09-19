@@ -27,8 +27,7 @@ declare -A _importsArray
 . "$HOME/.bash/.bash_docker-helper-functions"
 # ↑↑↑2 END DOCKER
 # ↓↓↓2 UTILITY FUNCTIONS
-if [[ ! -v IMPORTED_UTILITIES_SUCCESS ]]; # If we haven't imported it yet, import it, but only once.
-then
+if [[ ! -v IMPORTED_UTILITIES_SUCCESS ]]; then # If we haven't imported it yet, import it, but only once.
     . $HOME/.bash/.bash_utility_functions && IMPORTED_UTILITIES_SUCCESS=true # Load in the utility functions file. Lots of handy stuff here.
 fi
 # ↑↑↑2 END UTILITY FUNCTIONS
