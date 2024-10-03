@@ -1409,4 +1409,3 @@ alias ?so='webSearch stackoverflow'
 
 . $HOME/.bash/.bash_describe # The describe suite.
 
-_importsArray[utility_functions]="$(( ${_importsArray[utility_functions]} + 1 ))"

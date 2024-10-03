@@ -12,62 +12,71 @@
 shopt -s extglob
 # ↑↑↑ END SHELL OPTIONS
 # ↓↓↓1 IMPORTS
+# ↓↓↓ def import()
+import() {
+    local _DOCSTRING="If the given file exists, source it."
+    local _USAGE="Usage: import <file>"
+
+    local  file
+    file="$1"
+
+    if [[ -f "$file" ]] && [[ -r "$file" ]]; then
+        source "$file"
+        _importsArray["$file"]="$(( ${_importsArray[$file]} + 1 ))"
+    fi
+}
+# ↑↑↑ END import
+
 # ↓↓↓ Imports array
 # This array keeps track of what has been imported, by having an incromenter at the end of scripts to be imported.
 declare -A _importsArray
 # ↑↑↑ END Imports array
 # ↓↓↓2 OLD FUNCTIONS
-. "$HOME/.bash/.bash_functions"
+import "$HOME/.bash/.bash_functions"
 # ↑↑↑2 END OLD FUNCTIONS
 # ↓↓↓2 GIT
-. "$HOME/.bash/.bash_git-helper-functions"
-. "$HOME/.bash/.bash_github-helpers"
+import "$HOME/.bash/.bash_git-helper-functions"
+import "$HOME/.bash/.bash_github-helpers"
 # ↑↑↑2 END GIT
 # ↓↓↓2 DOCKER
-. "$HOME/.bash/.bash_docker-helper-functions"
+import "$HOME/.bash/.bash_docker-helper-functions"
 # ↑↑↑2 END DOCKER
 # ↓↓↓2 UTILITY FUNCTIONS
-if [[ ! -v IMPORTED_UTILITIES_SUCCESS ]]; then # If we haven't imported it yet, import it, but only once.
-    . $HOME/.bash/.bash_utility_functions && IMPORTED_UTILITIES_SUCCESS=true # Load in the utility functions file. Lots of handy stuff here.
-fi
+import "$HOME/.bash/.bash_utility_functions" # Load in the utility functions file. Lots of handy stuff here.
 # ↑↑↑2 END UTILITY FUNCTIONS
 # ↓↓↓2 ALIASES
-if [ -f ~/.bash/.bash_aliases ]; then
-    . ~/.bash/.bash_aliases
-fi
+import "$HOME/.bash/.bash_aliases"
 # ↑↑↑2 END Aliases
 # ↓↓↓2 BASH COMPLETION
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
-if [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-fi
+import "/etc/bash_completion"
 # ↑↑↑2 END BASH COMPLETION
 # ↓↓↓2 DYNAMIC PROMPT
-. ~/.bash/.bash_dynamic_prompt_functions # Loads the supporting functions for the dynamic prompt.
+import "$HOME/.bash/.bash_dynamic_prompt_functions" # Loads the supporting functions for the dynamic prompt.
 # ↑↑↑2 END DYNAMIC PROMPT
 # ↓↓↓2 BOOKMARKS
 # setup filesystem path bookmarks
-. ~/.bash/local/.bash_places
+import "$HOME/.bash/local/.bash_places"
 # ↑↑↑2 END BOOKMARKS
 # ↓↓↓2 CD AND MARK SYSTEM.
 # Include the 'cd' overriding mark system functions.
 ##  NOTE: this script calls the printSuperbootsInfoBar function from above in the PS1 section.
-. $HOME/.bash/.bash_mark-system
+import "$HOME/.bash/.bash_mark-system"
 # ↑↑↑2 END CD AND MARK SYSTEM.
 # ↓↓↓2 REPL
-. $HOME/.bash/.bash_repl
+import "$HOME/.bash/.bash_repl"
 # ↑↑↑2 END REPL
 # ↓↓↓2 COMPLETIONS FOR CUSTOM SCRIPTS
 # Import the completions for custom scripts.
-. $HOME/.bash/.bash_completions
+import "$HOME/.bash/.bash_completions"
 # ↑↑↑2 END COMPLETIONS FOR CUSTOM SCRIPTS
 # ↓↓↓ ALPHABET NUMBER
-. "$HOME/.bash/.bash_alphabet"
+import "$HOME/.bash/.bash_alphabet"
 # ↑↑↑ END ALPHABET NUMBER
 # ↓↓↓ GOLANG
-. "$HOME/.bash/.bash_go-config"
+import "$HOME/.bash/.bash_go-config"
 # ↑↑↑ END GOLANG
 # ↑↑↑1 END IMPORTS
 # ↓↓↓ COLOR VARIABLES SETUP

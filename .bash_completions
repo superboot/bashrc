@@ -1,3 +1,2 @@
 complete -c sourcecode # Complete command names for the $HOME/bin/sourcecode script.
 complete -c vimwhich   # Complete command names for the $HOME/bin/vimwhich script that edits the file that the argument would run.
-_importsArray[completions]="$(( ${_importsArray[completions]} + 1 ))"

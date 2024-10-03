@@ -15,4 +15,3 @@ invisableCursor() { printf '\033[?25l'; }
 visableCursor() {  printf '\033[?25h'; }
 
 
-_importsArray[cursor-movements]="$(( ${_importsArray[cursor-movements]} + 1 ))"

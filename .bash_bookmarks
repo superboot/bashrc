@@ -59,4 +59,3 @@ bd()
     fi
 }
 
-_importsArray[bookmarks]="$(( ${_importsArray[bookmarks]} + 1 ))"

@@ -83,4 +83,3 @@ defineMegaHelpFunctions()
         fi
     }
 }
-_importsArray[functions]="$(( ${_importsArray[functions]} + 1 ))"

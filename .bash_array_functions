@@ -348,4 +348,3 @@ complete -W '$(a=( ${!_STACK@} ); echo ${a[*]##_STACK_})' stack # Complete only 
 complete -W '$(a=( ${!_STACK@} ); echo ${a[*]##_STACK_})' stacks
 # ↑↑↑1 END Completions
 
-_importsArray[array_functions]="$(( ${_importsArray[array_functions]} + 1 ))"

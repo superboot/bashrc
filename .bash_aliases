@@ -13,4 +13,3 @@ if [[ -d "$HOME/.bash/local/aliases" ]]; then
     done
 fi
 
-_importsArray[aliases]="$(( ${_importsArray[aliases]} + 1 ))"

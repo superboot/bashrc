@@ -513,4 +513,3 @@ bind -x '"\e,":cdKeybindingToMostRecent' # Bind alt-, to go to the most recently
 cdStackAppend "$PWD"
 
 MARKS_readMarksFile # Read the marks file into the environment.
-_importsArray[mark-system]="$(( ${_importsArray[mark-system]} + 1 ))"
