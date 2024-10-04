@@ -21,16 +21,22 @@ fi
 #    PATH="$HOME/bin:$PATH"
 #fi
 if [[ -z "$_setupPathAlready" ]]; then
-    export PATH="$(echo $HOME/bin{,/launchers,/utils,/info,/favorites} | tr ' ' ':')":$PATH
+    pathArray=(
+        "$HOME/bin"
+        "$HOME/bin/favorites"
+        "$HOME/bin/go"
+        "$HOME/bin/info"
+        "$HOME/bin/launchers"
+        "$HOME/bin/utils"
+        "$HOME/bin/utils/phone"
+        "$HOME/bin/utils/text"
+    )
+    pathString="${pathArray[*]}"
+    pathString="${pathString// /:}" # Delimit the string with colons instead of spaces.
+    export PATH="$pathString:$PATH" # Prepend the path elements onto the existing PATH.
+
     export _setupPathAlready=true
 fi
-# Environment vars for nabi (korean text)
-export XIM=nabi
-export XIM_ARGS=
-export XIM_PROGRAM=/usr/bin/nabi
-export XMODIFIERS="@im=nabi"
-export GTK_IM_MODULE=xim
-export QT_IM_MODULE=xim
 
 # To enable xdg-open url handling of Zotero and Obsidian URIs as defined in ~/.local/share/applications/*.desktop files with the x-scheme-handler mimetype.
 export XDG_CURRENT_DESKTOP=MATE
