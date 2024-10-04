@@ -210,7 +210,7 @@ if [[ -v TMUX ]]; then
 fi
 # ↑↑↑ END CHICKEN
 # ↓↓↓ DICTIONARY
-export SDCV_PAGER=/usr/bin/less
+export SDCV_PAGER='/usr/bin/less'
 # ↑↑↑ END DICTIONARY
 # ↓↓↓ LOCAL .bashrc
 if [[ -f ~/.bash/local/.bashrc ]]; then
