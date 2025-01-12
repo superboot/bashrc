@@ -1,0 +1,238 @@
+# ↓↓↓ Optional functions check
+# The minimumArguments function and the functionTracingDebug function are simply useful for development, and are not required.
+# The following loop simply masks the functions with do-nothing functions, if they are not already defined.
+declare -F functionTracingDebug >/dev/null || functionTracingDebug () { : ; }
+declare -F minimumArguments     >/dev/null || minimumArguments     () { : ; }
+# ↑↑↑ END Required
+
+# ↓↓↓ yesNo
+# If yesNo is not already defined, define it. 
+if ! declare -F yesNo >/dev/null; then
+	yesNo() {
+		local _DOCSTRING="Asks for a response of yes or no. Returns true or false."
+		local _USAGE="Usage: yesNo <question>"
+		functionTracingDebug "$@"
+
+		local  question
+		minimumArguments 1 "$@" || return 3
+		question=$1
+		local answer
+
+		while true
+		do
+			read -n 1 -p "$question"': ' answer
+			echo # Adds a carage return after the answer is given. Annoying this isn't default.
+			case "$answer" in
+				y|Y)
+					return 0
+					;;
+				n|N)
+					return 1
+					;;
+				*)
+					echo "Please try again. Type 'Y' or 'N' please."
+			esac
+		done
+	}
+fi
+# ↑↑↑ END yesNo
+
+# ↓↓↓ def edit()
+edit() {
+    local _DOCSTRING="Edit commands and functions in vim."
+    local _USAGE="Usage: edit <file>"
+    functionTracingDebug "$@"
+
+    local  file
+    minimumArguments 1 "$@" || return 3
+    file="$1"
+
+    local query isAlias isFunction isCommand numberOfHits response
+
+    query="$1"
+    
+    isAlias="$(alias            "$query" >/dev/null 2>/dev/null && echo 1 || echo 0)"
+    isFunction="$(declare -F    "$query" >/dev/null 2>/dev/null && echo 1 || echo 0)"
+    isCommand="$(which          "$query" >/dev/null 2>/dev/null && echo 1 || echo 0)"
+    
+    numberOfHits=$(( isAlias + isFunction + isCommand ))
+
+    if [[ "$numberOfHits" -gt 1 ]]; then 
+        # We need a menu
+        echo "Multiple matches." 
+        [[ "$isAlias"    == 1 ]] && echo "    (A)lias"
+        [[ "$isFunction" == 1 ]] && echo "    (F)unction"
+        [[ "$isCommand"    == 1 ]] && echo "    (C)ommand"
+        read -p "Please choose (A,F,C): " response
+        case "$response" in
+            a|A)
+                editAlias    "$query"
+                ;;
+            f|F)
+                editFunction "$query"
+                ;;
+            c|C)
+                editCommand  "$query"
+                ;;
+        esac
+    else
+        #_#echo "Alias: $isAlias, Function: $isFunction, Command: $isCommand"
+        if   [[ "$isAlias"    == 1 ]]; then
+            editAlias "$query"
+        elif [[ "$isFunction" == 1 ]]; then
+            editFunction "$query"
+        elif [[ "$isCommand"  == 1 ]]; then
+            editCommand "$query"
+        fi
+    fi
+    return 0
+}
+# ↑↑↑ END edit
+
+# Identity funcitons
+# ↓↓↓ def isText()
+isText() {
+    local _DOCSTRING="Returns true/false if file supplied is text."
+    local _USAGE="Usage: isText <file>"
+    functionTracingDebug "$@"
+
+    local  file
+    minimumArguments 1 "$@" || return 3
+    file="$1"
+
+    file -i "$file" | grep -P -i '^/.*: text/' >/dev/null 2>/dev/null && return 0 
+    return 1
+}
+# ↑↑↑ END isText
+
+# Locating funcitons
+# ↓↓↓ def locateAlias()
+locateAlias() {
+    local _DOCSTRING="Locates the given alias among the rc files. Somewhat naive in that it can't know if the line if finds is inside a function definition that is has not been run, was found prior to the most recent defined alias, but inside a function that was run after the hard-coded most-recent definition."
+    local _USAGE="Usage: locateAlias <alias>"
+    functionTracingDebug "$@"
+
+    local  alias
+    minimumArguments 1 "$@" || return 3
+    alias="$1"
+
+    local file filename lineNumber aliasDefinition
+
+    for file in ~/.bash/.bash* ~/.bash/aliases/*.alias ~/.bash/local/aliases/*.alias
+    do
+        match="$(grep -Hn '^ *alias  *'"$alias"'=' "$file" 2>/dev/null | tail -n1 | cut -d: -f1,2)"
+        if [[ ! -z "$match" ]]; then # If there is text in $match
+            # Fields seperated by ':'
+            # Fields are: (1): File name, (2) Line number
+            filename="${match%:*}"   # Field one
+            lineNumber="${match#*:}" # Field two
+        fi
+    done
+    # The variables will have been overwritten by the most recent match.
+    if [[ ! -z "$filename" ]]; then # If there is text in $filename
+        echo "$filename"
+        echo "$lineNumber"
+    fi
+}
+# ↑↑↑ END locateAlias
+# ↓↓↓ def locateFunction()
+locateFunction() {
+    local _DOCSTRING="Returns the filename and line number of the definition of a given funciton."
+    local _USAGE="Usage: locateFunction <func>"
+    functionTracingDebug "$@"
+    # This function is used by the edit() funciton.
+
+    local  func
+    minimumArguments 1 "$@" || return 3
+    func="$1"
+
+    local extdebugSave
+
+    extdebugSave="$(shopt -p extdebug)"
+    shopt -s extdebug
+    declare -F "$func" |{ read -r func lineNumber sourceFileName # Get the source file name and line number for where this function is defined and assign them to variables.
+    echo "$lineNumber $sourceFileName"
+    } # The command group is required to use the variables created by "read" because piping to read is done in a subshell so the variables don't make it back to the current environment, and must be used before the subshell closes.
+    $extdebugSave # Set it back to what it was before.
+}
+# ↑↑↑ END locateFunction
+
+# Action funcitons
+# ↓↓↓ def editFunction()
+editFunction() {
+    local _DOCSTRING="Edit the source file of a defined function in the environment."
+    local _USAGE="Usage: editFunction <func>"
+    functionTracingDebug "$@"
+
+    local  func
+    minimumArguments 1 "$@" || return 3
+    func="$1"
+    
+    local fileName funcLineNumber 
+
+    read   funcLineNumber    fileName  <  <(locateFunction "$func")
+    vim +"$funcLineNumber" "$fileName"
+}
+# ↑↑↑ END editFunction
+# ↓↓↓ def editAlias()
+editAlias() {
+    local _DOCSTRING="Edits the source file of an alias defined in the environment."
+    local _USAGE="Usage: editAlias <alias>"
+    functionTracingDebug "$@"
+
+    local  func
+    minimumArguments 1 "$@" || return 3
+    alias="$1"
+
+    local filename lineNumber aliasDefinition 
+
+    declare -a data # array to hold match return data
+    mapfile -t data < <(locateAlias "$alias")
+
+    filename="${data[0]}"
+    lineNumber="${data[1]}"
+
+    vim +"$lineNumber" "$filename"
+}
+# ↑↑↑ END editAlias
+# ↓↓↓ def editCommand()
+editCommand() {
+    local _DOCSTRING="Edit the source file of the given command."
+    local _USAGE="Usage: editCommand <command>"
+    functionTracingDebug "$@"
+
+    local  command
+    minimumArguments 1 "$@" || return 3
+    command="$1"
+
+    local path 
+
+    path="$(which "$query")"
+
+    # Resolve symlink
+    if [[ -L "$path" ]]; then
+        path="$(readlink "$path")"
+    fi
+
+    # Check for editability
+    if isText "$path"; then
+        if [[ -w "$path" ]]; then # File is writable
+            : # Because of the return statement in the 'else', the positive condition is after the 'fi'.
+        else
+            echo "$green$path$normal: File not writable."
+            yesNo "Open anyway?" || return 0
+        fi
+        # Edit the file
+        vim "$path"
+    else
+        echo "$path: Not a text file. Can't edit." >&2 # Send to stderr
+        return 1
+    fi
+}
+# ↑↑↑ END editCommand
+
+# ↓↓↓ Completions
+complete -A function -A command edit
+# ↑↑↑ END Completions
+
+
