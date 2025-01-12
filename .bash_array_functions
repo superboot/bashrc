@@ -251,6 +251,65 @@ keyInArray() {
 }
 # ↑↑↑ END keyInArray
 
+# Opperations on arrays
+# appendToAllArrayValues() ↓↓↓1 #
+appendToAllArrayValues() {
+    local _DOCSTRING="Appends given string to the values of all keys in the given array."
+    local _USAGE="Usage: appendToAllArrayValues <array> <string>"
+    functionTracingDebug "$@"
+
+    local  array string
+    minimumArguments 2 "$@" || return 3
+    array="$1"
+    string="$2"
+
+    local index value
+
+    if existingArrayName "$array"; then
+        declare -n arrayRef="$array" # make a nameref to the given named array.
+    else
+        echo "Invalid array name: $array" 1>&2 # log error to stderr
+        return 1
+    fi
+    
+    for index in "${!arrayRef[@]}"
+    do
+        if [[ "${arrayRef[$index]}" != "" ]]; then # If the value is not empty
+            value="${arrayRef["$index"]}"
+            arrayRef["$index"]="$value$string"
+        fi
+    done
+}
+# ↑↑↑ END appendToAllArrayValues()
+# prependToAllArrayValues() ↓↓↓1 #
+prependToAllArrayValues() {
+    local _DOCSTRING="Prepends given string to the values of all keys in the given array."
+    local _USAGE="Usage: appendToAllArrayValues <array> <string>"
+    functionTracingDebug "$@"
+
+    local  array string
+    minimumArguments 2 "$@" || return 3
+    array="$1"
+    string="$2"
+
+    local index value
+
+    if existingArrayName "$array"; then
+        declare -n arrayRef="$array" # make a nameref to the given named array.
+    else
+        echo "Invalid array name: $array" 1>&2 # log error to stderr
+        return 1
+    fi
+    
+    for index in "${!arrayRef[@]}"
+    do
+        if [[ "${arrayRef[$index]}" != "" ]]; then # If the value is not empty
+            value="${arrayRef["$index"]}"
+            arrayRef["$index"]="$string$value"
+        fi
+    done
+}
+# ↑↑↑ END appendToAllArrayValues()
 
 
 
