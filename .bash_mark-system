@@ -39,7 +39,7 @@ export CD_TAILLINES=5  # Used in report formatting
 export CD_LONGPRINTADJUSTMENT=4 # Used in report formatting. Set to 2 + number-of-prompt-lines.
 export MARKS_FILE="$HOME/.bash/local/.bash_persistent_marks"
 
-declare -A marks # Set the mark associative array for mapping bookmark names to paths.
+declare -g -A marks # Set the mark associative array for mapping bookmark names to paths.
 
 # MARKS SYSTEM
 # ↓↓↓1 def m()
@@ -102,7 +102,7 @@ delm() {
     [[ "$mark" =~ [a-z] ]] && MARKS_removeTempMark "$mark" # If $mark is a single lower case mark, remove it from the environment.
 }
 # ↑↑↑ END delm
-# ↓↓↓ def MARKS_persistMarkToDis()
+# ↓↓↓ def MARKS_persistMarkToDisk()
 MARKS_persistMarkToDisk() {
     local _DOCSTRING="Adds the current mark to the persistant disk file of marks. Mark must be upper-case."
     local _USAGE="Usage: persistMarkToDisk path mark"
