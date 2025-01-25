@@ -971,8 +971,6 @@ imports() {
 }
 # ↑↑↑ END imports
 
-
-
 # Function aids & interrogation
 # ↓↓↓ def listArgs()
 listArgs() {
@@ -1405,6 +1403,27 @@ alias ?d='webSearch webster'
 alias ?w='webSearch wikipedia'
 alias ?so='webSearch stackoverflow'
 # ↑↑↑ END webSearch
+
+# File operations
+# ↓↓↓ def chmox()
+chmox() {
+    local _DOCSTRING="Set most recently modified file in PWD, unless specified, executable by all."
+    local _USAGE="Usage: chmox [file]"
+    functionTracingDebug "$@"
+
+    local  commandline
+
+    if [[ "$#" -gt 0 ]]; then
+        commandline="$@"
+    else
+        commandline="$(latestFile)"
+    fi
+    
+    chmod +x "$commandline"
+}
+# ↑↑↑ END chmox
+
+
 
 
 . $HOME/.bash/.bash_describe # The describe suite.

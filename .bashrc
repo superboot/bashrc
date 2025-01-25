@@ -78,6 +78,12 @@ import "$HOME/.bash/.bash_alphabet"
 # ↓↓↓ GOLANG
 import "$HOME/.bash/.bash_go-config"
 # ↑↑↑ END GOLANG
+# ↓↓↓ VAR FUNCS
+import "$HOME/.bash/.bash_variable-functions"
+# ↑↑↑ END VAR FUNCS
+# ↓↓↓ "EDIT SUITE"
+import "$HOME/.bash/.bash_edit-suite"
+# ↑↑↑ END "EDIT SUITE"
 # ↑↑↑1 END IMPORTS
 # ↓↓↓ COLOR VARIABLES SETUP
 setColors # Setup the color variables for printing in color. Depends on .bash_utility_functions

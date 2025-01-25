@@ -1,0 +1,26 @@
+# ↓↓↓ def swapVars()
+swapVars() {
+    local _DOCSTRING="Given the name of two variables, swap the values assigned."
+    local _USAGE="Usage: swapVars <a> <b>"
+    functionTracingDebug "$@"
+
+    local  a b
+    minimumArguments 2 "$@" || return 3
+    a="$1"
+    b="$2"
+    
+    local hold
+
+    # Create namerefs with which to manipulate the variables named in the arguments.
+    declare -n avar="$a"
+    declare -n bvar="$b"
+
+    # Save
+    hold="$avar"
+
+    # Swap
+    avar="$bvar"
+    bvar="$hold"
+}
+# ↑↑↑ END swapVars
+
