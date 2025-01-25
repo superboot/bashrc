@@ -1,2 +1,4 @@
 # Add tab completion for bash.
-eval "$(gh completion -s bash)"
+if which gh >/dev/null 2>&1; then
+    eval "$(gh completion -s bash)"
+fi

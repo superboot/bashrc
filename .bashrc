@@ -10,6 +10,7 @@
 # ↓↓↓ SHELL OPTIONS
 # Extended globbing
 shopt -s extglob
+shopt -s globstar
 # ↑↑↑ END SHELL OPTIONS
 # ↓↓↓1 IMPORTS
 # ↓↓↓ def import()
@@ -190,7 +191,9 @@ export INPUTRC="$HOME/.bash/inputrc"
 # ↑↑↑ END EXPORTS (PATH etc.)
 # ↓↓↓ FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # Dissable ctrl-s's binding to flowcontrol's "stop"
-stty -ixon
+if [ -t 0 ]; then # If we are running in a terminal
+    stty -ixon 
+fi
 # ↑↑↑ END FLOWCONTROL (ctrl-s, ctrl-q anoyance).
 # ↓↓↓ TMUX alt-v paste (Commented out)
 # Set alt-v to paste from inside tmux with 'tmux paste-buffer' command.
