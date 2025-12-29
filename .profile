@@ -16,28 +16,14 @@ if [ -n "$BASH_VERSION" ]; then
     fi
 fi
 
-# set PATH so it includes user's private bin if it exists
-#if [ -d "$HOME/bin" ] ; then
-#    PATH="$HOME/bin:$PATH"
-#fi
-if [[ -z "$_setupPathAlready" ]]; then
-    pathArray=(
-        "$HOME/bin"
-        "$HOME/bin/favorites"
-        "$HOME/bin/go"
-        "$HOME/bin/info"
-        "$HOME/bin/launchers"
-        "$HOME/bin/utils"
-        "$HOME/bin/utils/phone"
-        "$HOME/bin/utils/text"
-    )
-    pathString="${pathArray[*]}"
-    pathString="${pathString// /:}" # Delimit the string with colons instead of spaces.
-    export PATH="$pathString:$PATH" # Prepend the path elements onto the existing PATH.
-
-    export _setupPathAlready=true
+# Source the path functions file to set up PATH
+if [[ -f "$HOME/.bash/.bash_path_functions" ]]; then
+    . "$HOME/.bash/.bash_path_functions"
+    setPath
 fi
 
 # To enable xdg-open url handling of Zotero and Obsidian URIs as defined in ~/.local/share/applications/*.desktop files with the x-scheme-handler mimetype.
 export XDG_CURRENT_DESKTOP=MATE
 
+
+if [ -e /home/john/.nix-profile/etc/profile.d/nix.sh ]; then . /home/john/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer

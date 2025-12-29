@@ -5,9 +5,9 @@ alias ps1='PS1=$'
 alias cp='cp -i'
 alias ':q'=exit
 alias screen='TERM=xterm-256color screen'
-alias 'tmux'='tmux -2'
 alias dis='disown'
 # tmux aliases.
+alias 'tmux'='tmux -2'
 alias ta='tmux attach'
-alias t='tmux '
+alias t='tmux'
 

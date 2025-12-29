@@ -232,7 +232,7 @@ editCommand() {
 # ↑↑↑ END editCommand
 
 # ↓↓↓ Completions
-complete -A function -A command edit
+complete -A function -A command -A alias edit
 # ↑↑↑ END Completions
 
 

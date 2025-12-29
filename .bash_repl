@@ -54,7 +54,9 @@ repl() {
 weAreInBDB() {
     ## Checks if we are already in the BDB tmux session.
     functionTracingDebug "$@"
-    :
+    local current_session
+    current_session=$(tmux display-message -p '#S' 2>/dev/null)
+    [[ "$current_session" == "BASH_DEBUG" ]]
 }
 # ↑↑↑ END weAreInBDB
 

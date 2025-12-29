@@ -1,5 +1,5 @@
 # Create letter to number in alphabet array.
-declare -A letterToAlphabetNumberArray
+declare -Ag letterToAlphabetNumberArray
 c=1
 for letter in {a..z}
 do

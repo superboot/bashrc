@@ -32,6 +32,10 @@ import() {
 # This array keeps track of what has been imported, by having an incromenter at the end of scripts to be imported.
 declare -A _importsArray
 # ↑↑↑ END Imports array
+# ↓↓↓2 PATH
+import "$HOME/.bash/.bash_path_functions"
+setPath # Call is idempotent.
+# ↑↑↑2 END PATH
 # ↓↓↓2 OLD FUNCTIONS
 import "$HOME/.bash/.bash_functions"
 # ↑↑↑2 END OLD FUNCTIONS

@@ -1168,7 +1168,7 @@ mostRecentlyModifiedDirectory() {
 
     local file latest
 
-    for file in in "${dir}"/*
+    for file in "${dir}"/*
     do
         if [[ -d "$file" ]] && [[ "$file" -nt "$latest" ]]; then 
             latest="$file"

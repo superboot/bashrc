@@ -1,0 +1,79 @@
+# This file contains functions for managing the PATH environment variable.
+
+# ↓↓↓ def setPath()
+setPath() {
+    local _DOCSTRING="Sets up the PATH environment variable by prepending user-defined directories."
+    local _USAGE="Usage: setPath"
+
+    local -a pathArray # Local array
+    local p
+    
+    pathArray=( # Listed in reverse order because we are prepending to the PATH.
+        "$HOME/bin/utils/text"
+        "$HOME/bin/utils/phone"
+        "$HOME/bin/utils"
+        "$HOME/bin/launchers"
+        "$HOME/bin/info"
+        "$HOME/bin/tmux"
+        "$HOME/bin/go"
+        "$HOME/bin/favorites"
+        "$HOME/bin"
+    )
+    for p in "${pathArray[@]}"
+    do
+        prependToPath "$p" # Action is idempotent.
+    done
+}
+# ↑↑↑ END setPath
+
+# ↓↓↓ def appendToPath()
+appendToPath() {
+    local _DOCSTRING="Idempotently append a given path to the environment PATH."
+    local _USAGE="Usage: appendToPath <path>"
+
+    local  path
+    path="$1"
+
+    path="$(readlink -f "$path")"
+    if [[ -d "$path" ]] && ! inPath "$path"; then
+        PATH="$PATH:$path"
+    fi
+}
+# ↑↑↑ END appendToPath
+
+# ↓↓↓ def prependToPath()
+prependToPath() {
+    local _DOCSTRING="Idempotently prepend a given path to the environment PATH."
+    local _USAGE="Usage: prependToPath <path>"
+
+    local  path
+    path="$1"
+
+    path="$(readlink -f "$path")"
+    if [[ -d "$path" ]] && ! inPath "$path"; then
+        PATH="$path:$PATH"
+    fi
+}
+# ↑↑↑ END prependToPath
+
+# ↓↓↓ def inPath()
+inPath() {
+    local _DOCSTRING="Checks if the given path is in the system PATH. Returns bool."
+    local _USAGE="Usage: inPath <path>"
+
+    local  path
+    path="$1"
+    
+    local p
+
+    while IFS=: read -r p
+    do
+        if [[ "$p" == "$path" ]]; then
+            return 0 # Given path is on the PATH
+        fi
+    done < <(echo $PATH)
+
+    return 1 # We didn't find a match
+}
+# ↑↑↑ END inPath
+
